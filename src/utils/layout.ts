@@ -1,5 +1,4 @@
 export const LAYOUT = {
-  phoneWidth: "max-w-[390px]",
   topNavHeight: "h-12",
   bottomNavHeight: "h-14",
 } as const;
