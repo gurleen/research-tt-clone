@@ -7,7 +7,7 @@ export function VideoProgressBar({ progress }: VideoProgressBarProps) {
 
   return (
     <div
-      className="absolute bottom-14 inset-x-0 h-px z-20 pointer-events-none"
+      className="absolute above-bottom-nav inset-x-0 h-px z-20 pointer-events-none"
       aria-hidden
     >
       <div className="h-full bg-white" style={{ width }} />

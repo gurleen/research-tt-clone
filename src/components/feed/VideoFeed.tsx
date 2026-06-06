@@ -108,7 +108,7 @@ export function VideoFeed() {
       <VideoProgressBar progress={progress} />
 
       {!canGoForward && currentIndex < videos.length - 1 && (
-        <div className="absolute bottom-20 inset-x-0 flex justify-center pointer-events-none z-10">
+        <div className="absolute above-bottom-nav-md inset-x-0 flex justify-center pointer-events-none z-10">
           <span className="text-white/80 text-xs bg-black/50 px-3 py-1 rounded-full">
             Watch the full video to continue
           </span>

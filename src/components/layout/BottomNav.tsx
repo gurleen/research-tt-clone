@@ -1,4 +1,4 @@
-import { LAYOUT, Z } from "../../utils/layout";
+import { Z } from "../../utils/layout";
 
 function HomeIcon({ active }: { active?: boolean }) {
   return (
@@ -39,7 +39,7 @@ function ProfileIcon() {
 export function BottomNav() {
   return (
     <nav
-      className={`absolute bottom-0 inset-x-0 ${LAYOUT.bottomNavHeight} flex items-center justify-around px-2 text-white bg-black border-t border-white/10`}
+      className="bottom-nav absolute bottom-0 inset-x-0 flex items-center justify-around px-2 text-white bg-black border-t border-white/10"
       style={{ zIndex: Z.bottomNav }}
     >
       <button type="button" aria-label="Home">

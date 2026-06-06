@@ -72,7 +72,7 @@ export function VideoOverlay({
         onOpenComments={onOpenComments}
       />
       <VideoInfo video={video} />
-      <div className="absolute bottom-16 right-3 z-10 pointer-events-none">
+      <div className="absolute above-bottom-nav-sm right-3 z-10 pointer-events-none">
         <MusicDisc />
       </div>
     </>

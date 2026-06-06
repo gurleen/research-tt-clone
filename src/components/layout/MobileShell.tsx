@@ -8,7 +8,7 @@ type MobileShellProps = {
 
 export function MobileShell({ children }: MobileShellProps) {
   return (
-    <div className="relative w-full h-[100dvh] bg-black overflow-hidden">
+    <div className="relative w-full app-shell bg-black overflow-hidden">
       <TopNav />
       <main className="absolute inset-0">{children}</main>
       <BottomNav />

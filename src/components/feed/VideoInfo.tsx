@@ -8,7 +8,7 @@ export function VideoInfo({ video }: VideoInfoProps) {
   const tags = video.hashtags ?? [];
 
   return (
-    <div className="absolute bottom-16 left-3 right-20 text-white text-left pointer-events-none">
+    <div className="absolute above-bottom-nav-sm left-3 right-20 text-white text-left pointer-events-none">
       <p className="font-bold text-base mb-1 drop-shadow">@{video.creator.username}</p>
       <p className="text-sm mb-1 drop-shadow line-clamp-2">{video.caption}</p>
       {tags.length > 0 && (

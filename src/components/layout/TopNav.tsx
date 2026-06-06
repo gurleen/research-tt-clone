@@ -1,4 +1,4 @@
-import { LAYOUT, Z } from "../../utils/layout";
+import { Z } from "../../utils/layout";
 
 function MenuIcon() {
   return (
@@ -24,7 +24,7 @@ const tabs = ["Explore", "Following", "For You"] as const;
 export function TopNav() {
   return (
     <nav
-      className={`absolute top-0 inset-x-0 ${LAYOUT.topNavHeight} flex items-center justify-between px-4 text-white z-[${Z.topNav}] bg-black/20 backdrop-blur-sm`}
+      className="top-nav absolute top-0 inset-x-0 flex items-center justify-between px-4 text-white bg-black/20 backdrop-blur-sm"
       style={{ zIndex: Z.topNav }}
     >
       <button type="button" className="opacity-90" aria-label="Menu">

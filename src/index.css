@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+:root {
+  --bottom-nav-height: 3.5rem;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --bottom-chrome: calc(var(--bottom-nav-height) + var(--safe-area-bottom));
+}
+
 html,
 body,
 #root {
@@ -7,6 +14,44 @@ body,
   margin: 0;
   overflow: hidden;
   background: #000;
+}
+
+.app-shell {
+  width: 100%;
+  height: 100dvh;
+  height: -webkit-fill-available;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+}
+
+.bottom-nav {
+  min-height: var(--bottom-chrome);
+  padding-bottom: var(--safe-area-bottom);
+}
+
+.top-nav {
+  padding-top: var(--safe-area-top);
+  min-height: calc(3rem + var(--safe-area-top));
+}
+
+.above-bottom-nav {
+  bottom: var(--bottom-chrome);
+}
+
+.above-bottom-nav-sm {
+  bottom: calc(var(--bottom-chrome) + 0.5rem);
+}
+
+.above-bottom-nav-md {
+  bottom: calc(var(--bottom-chrome) + 1.5rem);
+}
+
+.above-bottom-nav-lg {
+  bottom: calc(var(--bottom-chrome) + 3.5rem);
+}
+
+.comments-sheet-panel {
+  padding-bottom: var(--safe-area-bottom);
 }
 
 .scrollbar-hide {

@@ -36,7 +36,7 @@ export function SideActions({
   onOpenComments,
 }: SideActionsProps) {
   return (
-    <div className="absolute right-3 bottom-28 flex flex-col items-center gap-5 z-10">
+    <div className="absolute right-3 above-bottom-nav-lg flex flex-col items-center gap-5 z-10">
       <CreatorAvatar
         username={video.creator.username}
         avatarUrl={video.creator.avatarUrl}

@@ -46,7 +46,7 @@ export function CommentsSheet({ comments, count, onClose }: CommentsSheetProps) 
         aria-label="Close comments"
       />
       <div
-        className={`relative bg-neutral-900 rounded-t-2xl max-h-[60vh] flex flex-col w-full transition-transform duration-300 ease-out ${
+        className={`comments-sheet-panel relative bg-neutral-900 rounded-t-2xl max-h-[60vh] flex flex-col w-full transition-transform duration-300 ease-out ${
           visible ? "translate-y-0" : "translate-y-full"
         }`}
       >
