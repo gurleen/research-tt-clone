@@ -1,0 +1,82 @@
+import { db } from "../../db/client.ts";
+import { ApiError } from "../../lib/http.ts";
+import { randomIntInclusive, sampleWithoutReplacement } from "../../lib/random.ts";
+import type { Community, SessionVideoInsert, SourceType } from "../../db/tables.ts";
+import { placePrompts } from "./place-prompts.ts";
+import { shuffleIngroupIntoFiller } from "./shuffle-ingroup-filler.ts";
+
+export async function composePlaylist(
+  sessionId: string,
+  community: Community,
+  sourceType: SourceType,
+): Promise<SessionVideoInsert[]> {
+  const { data: config, error: configError } = await db
+    .from("experiment_config")
+    .select("*")
+    .eq("community", community)
+    .maybeSingle();
+
+  if (configError) {
+    throw new Error(`Failed to load experiment config: ${configError.message}`);
+  }
+  if (!config) {
+    throw new ApiError(
+      503,
+      `Experiment config not found for community: ${community}`,
+    );
+  }
+
+  const ingroupCount = randomIntInclusive(
+    config.ingroup_count_min,
+    config.ingroup_count_max,
+  );
+  const fillerCount = randomIntInclusive(
+    config.filler_count_min,
+    config.filler_count_max,
+  );
+
+  const { data: ingroupPool, error: ingroupError } = await db
+    .from("videos")
+    .select("*")
+    .eq("video_type", "ingroup")
+    .eq("community", community)
+    .eq("source_type", sourceType);
+
+  if (ingroupError) {
+    throw new Error(`Failed to load ingroup videos: ${ingroupError.message}`);
+  }
+
+  const { data: fillerPool, error: fillerError } = await db
+    .from("videos")
+    .select("*")
+    .eq("video_type", "filler");
+
+  if (fillerError) {
+    throw new Error(`Failed to load filler videos: ${fillerError.message}`);
+  }
+
+  if ((ingroupPool?.length ?? 0) < ingroupCount) {
+    throw new ApiError(
+      503,
+      `Not enough ingroup videos for ${community}/${sourceType}`,
+    );
+  }
+  if ((fillerPool?.length ?? 0) < fillerCount) {
+    throw new ApiError(503, "Not enough filler videos in catalog");
+  }
+
+  const selectedIngroup = sampleWithoutReplacement(ingroupPool!, ingroupCount);
+  const selectedFiller = sampleWithoutReplacement(fillerPool!, fillerCount);
+
+  const slots = placePrompts(
+    shuffleIngroupIntoFiller(selectedIngroup, selectedFiller),
+    config,
+  );
+
+  return slots.map((slot, position) => ({
+    session_id: sessionId,
+    position,
+    video_id: slot.video_id,
+    show_interest_prompt: slot.show_interest_prompt,
+  }));
+}

@@ -112,3 +112,144 @@ body,
     transform: scale(1);
   }
 }
+
+.admin-shell {
+  height: 100%;
+  overflow: hidden;
+  background: #fafafa;
+  color: #18181b;
+}
+
+.admin-shell-scroll {
+  height: 100%;
+  overflow-y: auto;
+  background: #fafafa;
+  color: #18181b;
+}
+
+.admin-shell.admin-dark,
+.admin-shell-scroll.admin-dark {
+  background: #09090b;
+  color: #fafafa;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.bg-white) {
+  background-color: #18181b;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.bg-zinc-50) {
+  background-color: #09090b;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.bg-zinc-100) {
+  background-color: #27272a;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.bg-zinc-200) {
+  background-color: #3f3f46;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.text-zinc-950) {
+  color: #fafafa;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.text-zinc-900) {
+  color: #fafafa;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.text-zinc-800) {
+  color: #f4f4f5;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.text-zinc-700) {
+  color: #e4e4e7;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.text-zinc-600) {
+  color: #d4d4d8;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.text-zinc-500) {
+  color: #a1a1aa;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.text-zinc-400) {
+  color: #a1a1aa;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.border-zinc-200) {
+  border-color: #3f3f46;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.border-zinc-300) {
+  border-color: #52525b;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.hover\:bg-zinc-50:hover) {
+  background-color: #27272a;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.hover\:bg-zinc-100:hover) {
+  background-color: #27272a;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.hover\:bg-zinc-200:hover) {
+  background-color: #3f3f46;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.focus\:bg-zinc-100:focus) {
+  background-color: #27272a;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.hover\:text-zinc-800:hover) {
+  color: #f4f4f5;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.hover\:text-zinc-900:hover) {
+  color: #fafafa;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(a.hover\:text-zinc-800:hover) {
+  color: #f4f4f5;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.bg-zinc-900.text-white) {
+  background-color: #fafafa;
+  color: #18181b;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.shadow-sm) {
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.shadow-md) {
+  box-shadow:
+    0 4px 6px -1px rgb(0 0 0 / 0.35),
+    0 2px 4px -2px rgb(0 0 0 / 0.35);
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(input, textarea, select) {
+  background-color: #18181b;
+  color: #fafafa;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(input::placeholder, textarea::placeholder) {
+  color: #71717a;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(code.bg-zinc-100) {
+  background-color: #27272a;
+  color: #e4e4e7;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.border-red-200) {
+  border-color: #7f1d1d;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.bg-red-50) {
+  background-color: #450a0a;
+}
+
+:is(.admin-shell, .admin-shell-scroll).admin-dark :where(.text-red-900) {
+  color: #fecaca;
+}

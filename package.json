@@ -6,19 +6,31 @@
   "scripts": {
     "dev": "bun --hot src/index.ts",
     "start": "NODE_ENV=production bun src/index.ts",
-    "build": "bun run build.ts"
+    "build": "bun run build.ts",
+    "gen:types": "supabase gen types typescript --project-id ${SUPABASE_PROJECT_ID} > src/server/db/database.types.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1063.0",
+    "@aws-sdk/s3-request-presigner": "^3.1063.0",
+    "@radix-ui/react-label": "^2.1.9",
+    "@radix-ui/react-select": "^2.3.0",
+    "@radix-ui/react-slot": "^1.2.5",
+    "@supabase/supabase-js": "^2.108.0",
     "@use-gesture/react": "^10.3.1",
     "bun-plugin-tailwind": "^0.1.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "react": "^19",
     "react-dom": "^19",
     "react-router": "^7.17.0",
-    "tailwindcss": "^4.1.11"
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.1.11",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/bun": "latest",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/bun": "latest"
+    "supabase": "^2.105.0"
   }
 }
