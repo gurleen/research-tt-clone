@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   adminConfigResponseSchema,
+  adminSessionSummarySchema,
   experimentConfigFormSchema,
   platformSettingsFormSchema,
   presignUploadBodySchema,
@@ -29,6 +30,46 @@ describe("admin schemas", () => {
       staging_mode: true,
     });
     expect(parsed.staging_mode).toBe(true);
+  });
+
+  test("adminSessionSummarySchema parses session summary payload", () => {
+    const parsed = adminSessionSummarySchema.parse({
+      session: {
+        session_id: "550e8400-e29b-41d4-a716-446655440000",
+        community: "sikh",
+        source_type: "micro_influencer",
+        status: "in_progress",
+        current_position: 0,
+        assigned_at: "2026-06-08T12:00:00.000Z",
+      },
+      playlist_length: 10,
+      event_counts: {
+        evt_session_start: 1,
+        evt_content_link_display: 0,
+        evt_content_link_click: 0,
+        evt_content_stub_exit: 0,
+        evt_interest_prompt_display: 0,
+        evt_interest_response: 0,
+        evt_playlist_complete: 0,
+        evt_survey_complete: 0,
+      },
+      events: {
+        evt_session_start: [
+          {
+            event_id: "550e8400-e29b-41d4-a716-446655440001",
+            session_id: "550e8400-e29b-41d4-a716-446655440000",
+          },
+        ],
+        evt_content_link_display: [],
+        evt_content_link_click: [],
+        evt_content_stub_exit: [],
+        evt_interest_prompt_display: [],
+        evt_interest_response: [],
+        evt_playlist_complete: [],
+        evt_survey_complete: [],
+      },
+    });
+    expect(parsed.playlist_length).toBe(10);
   });
 
   test("presignUploadBodySchema validates upload payload", () => {

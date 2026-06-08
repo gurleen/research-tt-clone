@@ -1,11 +1,14 @@
 import { VideoOverlay } from "./VideoOverlay";
-import type { FeedVideo } from "../../types/feed";
+import type { PlatformApiClient } from "../../client/platform-api.ts";
+import type { StudyFeedVideo } from "../../types/feed";
 
 type VideoSlideProps = {
-  video: FeedVideo;
+  video: StudyFeedVideo;
   isActive: boolean;
   liked: boolean;
   touchEnabled: boolean;
+  sessionId?: string;
+  client?: PlatformApiClient;
   onToggleLike: () => void;
   onDoubleTapLike: () => void;
   onSwipeUp: () => void;
@@ -17,7 +20,7 @@ type VideoSlideProps = {
 
 export function VideoSlide(props: VideoSlideProps) {
   return (
-    <div className="relative w-full h-full snap-start snap-always shrink-0">
+    <div className="relative h-full w-full shrink-0 snap-start snap-always">
       <VideoOverlay {...props} />
     </div>
   );

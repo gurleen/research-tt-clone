@@ -4,13 +4,17 @@ import { SideActions } from "./SideActions";
 import { VideoInfo } from "./VideoInfo";
 import { VideoInteractionLayer } from "./VideoInteractionLayer";
 import { VideoPlayer } from "./VideoPlayer";
-import type { FeedVideo } from "../../types/feed";
+import { InterestPrompt } from "../study/InterestPrompt.tsx";
+import type { PlatformApiClient } from "../../client/platform-api.ts";
+import type { StudyFeedVideo } from "../../types/feed";
 
 type VideoOverlayProps = {
-  video: FeedVideo;
+  video: StudyFeedVideo;
   isActive: boolean;
   liked: boolean;
   touchEnabled: boolean;
+  sessionId?: string;
+  client?: PlatformApiClient;
   onToggleLike: () => void;
   onDoubleTapLike: () => void;
   onOpenComments: () => void;
@@ -25,6 +29,8 @@ export function VideoOverlay({
   isActive,
   liked,
   touchEnabled,
+  sessionId,
+  client,
   onToggleLike,
   onDoubleTapLike,
   onOpenComments,
@@ -34,9 +40,11 @@ export function VideoOverlay({
   onEnded,
 }: VideoOverlayProps) {
   const [userPaused, setUserPaused] = useState(false);
+  const [promptDismissed, setPromptDismissed] = useState(false);
 
   useEffect(() => {
     setUserPaused(false);
+    setPromptDismissed(false);
   }, [video.id, isActive]);
 
   const handleTogglePlay = useCallback(() => {
@@ -47,6 +55,13 @@ export function VideoOverlay({
     });
     return nowPaused;
   }, []);
+
+  const showPrompt =
+    isActive &&
+    video.show_interest_prompt &&
+    sessionId &&
+    client &&
+    !promptDismissed;
 
   return (
     <>
@@ -71,10 +86,18 @@ export function VideoOverlay({
         onToggleLike={onToggleLike}
         onOpenComments={onOpenComments}
       />
-      <VideoInfo video={video} />
+      <VideoInfo video={video} sessionId={sessionId} client={client} />
       <div className="absolute above-bottom-nav-sm right-3 z-10 pointer-events-none">
         <MusicDisc />
       </div>
+      {showPrompt && (
+        <InterestPrompt
+          sessionId={sessionId}
+          videoId={video.video_id}
+          client={client}
+          onDismiss={() => setPromptDismissed(true)}
+        />
+      )}
     </>
   );
 }

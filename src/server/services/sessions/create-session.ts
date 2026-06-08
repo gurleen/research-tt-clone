@@ -3,7 +3,7 @@ import { ApiError } from "../../lib/http.ts";
 import type { SessionRow } from "../../db/tables.ts";
 import type { Community, SourceType } from "../../db/tables.ts";
 import { assignSourceType } from "../randomization/assign-source-type.ts";
-import { composePlaylist } from "../playlist/compose-playlist.ts";
+import { composePlaylistSlots } from "../playlist/compose-playlist.ts";
 
 export async function loadSession(
   sessionId: string,
@@ -84,13 +84,16 @@ export async function createSession(
   sourceTypeOverride?: SourceType,
 ): Promise<SessionRow> {
   const sourceType = await assignSourceType(community, sourceTypeOverride);
+  const slots = await composePlaylistSlots(community, sourceType);
   const session = await createSessionRecord(community, sourceType);
-  const playlist = await composePlaylist(
-    session.session_id,
-    community,
-    sourceType,
+  await insertSessionVideos(
+    slots.map((slot, position) => ({
+      session_id: session.session_id,
+      position,
+      video_id: slot.video_id,
+      show_interest_prompt: slot.show_interest_prompt,
+    })),
   );
-  await insertSessionVideos(playlist);
   await writeSessionStartEvent(session);
   return session;
 }

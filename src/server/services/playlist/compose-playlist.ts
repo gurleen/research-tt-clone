@@ -5,11 +5,15 @@ import type { Community, SessionVideoInsert, SourceType } from "../../db/tables.
 import { placePrompts } from "./place-prompts.ts";
 import { shuffleIngroupIntoFiller } from "./shuffle-ingroup-filler.ts";
 
-export async function composePlaylist(
-  sessionId: string,
+export type PlaylistSlot = {
+  video_id: string;
+  show_interest_prompt: boolean;
+};
+
+export async function composePlaylistSlots(
   community: Community,
   sourceType: SourceType,
-): Promise<SessionVideoInsert[]> {
+): Promise<PlaylistSlot[]> {
   const { data: config, error: configError } = await db
     .from("experiment_config")
     .select("*")
@@ -72,6 +76,19 @@ export async function composePlaylist(
     shuffleIngroupIntoFiller(selectedIngroup, selectedFiller),
     config,
   );
+
+  return slots.map((slot) => ({
+    video_id: slot.video_id,
+    show_interest_prompt: slot.show_interest_prompt,
+  }));
+}
+
+export async function composePlaylist(
+  sessionId: string,
+  community: Community,
+  sourceType: SourceType,
+): Promise<SessionVideoInsert[]> {
+  const slots = await composePlaylistSlots(community, sourceType);
 
   return slots.map((slot, position) => ({
     session_id: sessionId,

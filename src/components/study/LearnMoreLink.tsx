@@ -1,0 +1,60 @@
+import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router";
+import type { PlatformApiClient } from "../../client/platform-api.ts";
+import { newEventId, nowIso, postEventBeacon } from "../../study/events.ts";
+
+type LearnMoreLinkProps = {
+  sessionId: string;
+  videoId: string;
+  client: PlatformApiClient;
+};
+
+export function LearnMoreLink({
+  sessionId,
+  videoId,
+  client,
+}: LearnMoreLinkProps) {
+  const navigate = useNavigate();
+  const displayLogged = useRef(false);
+
+  useEffect(() => {
+    if (displayLogged.current) return;
+    displayLogged.current = true;
+
+    void client.postEvent({
+      event_id: newEventId(),
+      session_id: sessionId,
+      event: "content_link_display",
+      video_id: videoId,
+      timestamp_display: nowIso(),
+    });
+  }, [client, sessionId, videoId]);
+
+  function handleClick() {
+    const clickStarted = performance.now();
+    postEventBeacon({
+      event_id: newEventId(),
+      session_id: sessionId,
+      event: "content_link_click",
+      video_id: videoId,
+      timestamp_click: nowIso(),
+      latency_ms: Math.round(performance.now() - clickStarted),
+    });
+
+    const params = new URLSearchParams({
+      session_id: sessionId,
+      video_id: videoId,
+    });
+    navigate(`/stub?${params.toString()}`);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className="pointer-events-auto mt-2 text-sm font-semibold underline drop-shadow"
+    >
+      Learn more
+    </button>
+  );
+}

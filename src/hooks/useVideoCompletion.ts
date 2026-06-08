@@ -2,8 +2,8 @@ import { useCallback, useState } from "react";
 
 const COMPLETION_THRESHOLD = 0.95;
 
-export function useVideoCompletion() {
-  const [currentIndex, setCurrentIndex] = useState(0);
+export function useVideoCompletion(initialIndex = 0) {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [completedIndices, setCompletedIndices] = useState<
     Record<number, boolean>
   >({});

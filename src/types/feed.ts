@@ -23,6 +23,14 @@ export type FeedVideo = {
   comments: FeedComment[];
 };
 
+export type StudyFeedVideo = FeedVideo & {
+  position: number;
+  video_id: string;
+  video_type: "ingroup" | "filler";
+  show_learn_more: boolean;
+  show_interest_prompt: boolean;
+};
+
 export type FeedCondition =
   | "placebo"
   | "state-media"

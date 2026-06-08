@@ -151,3 +151,30 @@ export const platformSettingsFormSchema = z.object({
 export type PlatformSettingsFormValues = z.infer<
   typeof platformSettingsFormSchema
 >;
+
+const sessionEventTableSchema = z.enum([
+  "evt_session_start",
+  "evt_content_link_display",
+  "evt_content_link_click",
+  "evt_content_stub_exit",
+  "evt_interest_prompt_display",
+  "evt_interest_response",
+  "evt_playlist_complete",
+  "evt_survey_complete",
+]);
+
+export const adminSessionSummarySchema = z.object({
+  session: z.object({
+    session_id: z.string().uuid(),
+    community: communitySchema,
+    source_type: z.enum(["micro_influencer", "institutional"]),
+    status: z.string(),
+    current_position: z.number().int().nonnegative(),
+    assigned_at: z.string(),
+  }),
+  playlist_length: z.number().int().nonnegative(),
+  event_counts: z.record(sessionEventTableSchema, z.number().int().nonnegative()),
+  events: z.record(sessionEventTableSchema, z.array(z.record(z.string(), z.unknown()))),
+});
+
+export type AdminSessionSummary = z.infer<typeof adminSessionSummarySchema>;

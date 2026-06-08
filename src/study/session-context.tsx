@@ -1,0 +1,224 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { useSearchParams } from "react-router";
+import { ApiError } from "../client/errors.ts";
+import type { PlatformApiClient } from "../client/platform-api.ts";
+import type {
+  Community,
+  SessionResponse,
+  SourceType,
+} from "../shared/api/types.ts";
+import type { StudyFeedVideo } from "../types/feed.ts";
+import { createStudyClient } from "./events.ts";
+import { mapPlaylist } from "./map-playlist-item.ts";
+
+const STORAGE_KEY = "study_session_id";
+
+export type StudySessionState =
+  | "loading"
+  | "ready"
+  | "error"
+  | "complete";
+
+type StudySessionContextValue = {
+  state: StudySessionState;
+  error: string | null;
+  session: SessionResponse | null;
+  client: PlatformApiClient;
+  videos: StudyFeedVideo[];
+  initialIndex: number;
+  markComplete: () => void;
+  patchPosition: (position: number) => Promise<void>;
+  completePlaylist: () => Promise<void>;
+};
+
+const StudySessionContext = createContext<StudySessionContextValue | null>(
+  null,
+);
+
+function isCommunity(value: string | null): value is Community {
+  return value === "armenian" || value === "sikh" || value === "iranian";
+}
+
+function isSourceType(value: string | null): value is SourceType {
+  return value === "micro_influencer" || value === "institutional";
+}
+
+function catalogErrorMessage(error: unknown, community?: string): string {
+  if (error instanceof ApiError) {
+    if (
+      error.status === 503 ||
+      error.message.toLowerCase().includes("not enough")
+    ) {
+      return community
+        ? `Study cannot start: not enough videos in catalog for ${community}.`
+        : "Study cannot start: not enough videos in catalog.";
+    }
+    return error.message;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "Failed to start study session.";
+}
+
+export function StudySessionProvider({ children }: { children: ReactNode }) {
+  const [searchParams] = useSearchParams();
+  const client = useMemo(() => createStudyClient(), []);
+  const [state, setState] = useState<StudySessionState>("loading");
+  const [error, setError] = useState<string | null>(null);
+  const [session, setSession] = useState<SessionResponse | null>(null);
+
+  const urlCommunity = searchParams.get("community");
+  const urlSessionId = searchParams.get("session_id");
+  const urlSourceType = searchParams.get("source_type");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function bootstrap() {
+      setState("loading");
+      setError(null);
+
+      try {
+        const storedSessionId = sessionStorage.getItem(STORAGE_KEY);
+        const sessionId = urlSessionId ?? storedSessionId;
+
+        if (sessionId) {
+          const restored = await client.getSession(sessionId);
+          if (cancelled) return;
+
+          sessionStorage.setItem(STORAGE_KEY, restored.session_id);
+          setSession(restored);
+
+          if (restored.status === "playlist_complete") {
+            setState("complete");
+          } else {
+            setState("ready");
+          }
+          return;
+        }
+
+        if (!isCommunity(urlCommunity)) {
+          setError(
+            "Missing community. Open the study link with ?community=armenian, sikh, or iranian.",
+          );
+          setState("error");
+          return;
+        }
+
+        const body: { community: Community; source_type?: SourceType } = {
+          community: urlCommunity,
+        };
+        if (isSourceType(urlSourceType)) {
+          body.source_type = urlSourceType;
+        }
+
+        const created = await client.createSession(body);
+        if (cancelled) return;
+
+        sessionStorage.setItem(STORAGE_KEY, created.session_id);
+        setSession(created);
+        setState("ready");
+      } catch (err) {
+        if (cancelled) return;
+        setError(catalogErrorMessage(err, urlCommunity ?? undefined));
+        setState("error");
+      }
+    }
+
+    void bootstrap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [client, urlCommunity, urlSessionId, urlSourceType]);
+
+  const videos = useMemo(
+    () => (session ? mapPlaylist(session.playlist) : []),
+    [session],
+  );
+
+  const initialIndex = session?.current_position ?? 0;
+
+  const markComplete = useCallback(() => {
+    setState("complete");
+  }, []);
+
+  const patchPosition = useCallback(
+    async (position: number) => {
+      if (!session) return;
+      const result = await client.patchPosition(session.session_id, position);
+      setSession((current) =>
+        current
+          ? { ...current, current_position: result.current_position }
+          : current,
+      );
+    },
+    [client, session],
+  );
+
+  const completePlaylist = useCallback(async () => {
+    if (!session) return;
+    await client.postEvent({
+      event_id: crypto.randomUUID(),
+      session_id: session.session_id,
+      event: "playlist_complete",
+      timestamp: new Date().toISOString(),
+    });
+    setSession((current) =>
+      current ? { ...current, status: "playlist_complete" } : current,
+    );
+    setState("complete");
+  }, [client, session]);
+
+  const value = useMemo<StudySessionContextValue>(
+    () => ({
+      state,
+      error,
+      session,
+      client,
+      videos,
+      initialIndex,
+      markComplete,
+      patchPosition,
+      completePlaylist,
+    }),
+    [
+      state,
+      error,
+      session,
+      client,
+      videos,
+      initialIndex,
+      markComplete,
+      patchPosition,
+      completePlaylist,
+    ],
+  );
+
+  return (
+    <StudySessionContext.Provider value={value}>
+      {children}
+    </StudySessionContext.Provider>
+  );
+}
+
+export function useStudySession(): StudySessionContextValue {
+  const context = useContext(StudySessionContext);
+  if (!context) {
+    throw new Error("useStudySession must be used within StudySessionProvider");
+  }
+  return context;
+}
+
+export function useStudyPlaylist(): StudyFeedVideo[] {
+  return useStudySession().videos;
+}

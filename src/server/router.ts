@@ -10,6 +10,7 @@ import { handleGetDebrief } from "./routes/debrief/get.ts";
 import { handleExport } from "./routes/export/get.ts";
 import { handleAdminConfig } from "./routes/admin/config.ts";
 import { handlePresignUpload } from "./routes/admin/uploads/presign.ts";
+import { handleAdminSessionSummary } from "./routes/admin/sessions/summary.ts";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -51,6 +52,17 @@ async function routeRequest(req: Request): Promise<Response> {
 
   if (method === "POST" && pathname === "/api/admin/uploads/presign") {
     return handlePresignUpload(req);
+  }
+
+  const adminSessionMatch = pathname.match(
+    /^\/api\/admin\/sessions\/([^/]+)\/summary$/,
+  );
+  if (method === "GET" && adminSessionMatch) {
+    const sessionId = adminSessionMatch[1]!;
+    if (!UUID_PATTERN.test(sessionId)) {
+      throw new ApiError(400, "Invalid session_id");
+    }
+    return handleAdminSessionSummary(req, sessionId);
   }
 
   const sessionMatch = pathname.match(/^\/api\/sessions\/([^/]+)(\/.*)?$/);

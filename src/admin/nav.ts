@@ -30,4 +30,9 @@ export const adminNavItems: AdminNavItem[] = [
     path: "/admin/handoff-settings",
     description: "Survey URL and debrief page copy",
   },
+  {
+    label: "Test session",
+    path: "/admin/test-session",
+    description: "Launch a walkthrough session and inspect events",
+  },
 ];

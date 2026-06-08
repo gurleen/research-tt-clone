@@ -1,5 +1,6 @@
 export type {
   AdminConfigResponse,
+  AdminSessionSummary,
   ExperimentConfigFormValues,
   PlatformSettingsFormValues,
   PresignUploadBody,
@@ -10,6 +11,7 @@ export type {
 
 export {
   adminConfigResponseSchema,
+  adminSessionSummarySchema,
   communitySchema,
   experimentConfigFormSchema,
   platformSettingsFormSchema,
