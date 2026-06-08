@@ -54,6 +54,14 @@ export async function uploadToR2(
       "Content-Type": body.content_type,
     },
     body: file,
+  }).catch((err) => {
+    throw new Error(
+      err instanceof TypeError
+        ? "Upload blocked by R2 CORS. Run `bun run configure:r2-cors` (see .env.example for R2_CORS_ORIGINS)."
+        : err instanceof Error
+          ? err.message
+          : "Upload failed",
+    );
   });
 
   if (!uploadResponse.ok) {

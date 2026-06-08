@@ -567,6 +567,7 @@ export type Database = {
         Row: {
           account_handle: string;
           account_name: string;
+          active: boolean;
           central_issue: string | null;
           community: Database["public"]["Enums"]["community"] | null;
           created_at: string;
@@ -580,6 +581,7 @@ export type Database = {
         Insert: {
           account_handle: string;
           account_name: string;
+          active?: boolean;
           central_issue?: string | null;
           community?: Database["public"]["Enums"]["community"] | null;
           created_at?: string;
@@ -593,6 +595,7 @@ export type Database = {
         Update: {
           account_handle?: string;
           account_name?: string;
+          active?: boolean;
           central_issue?: string | null;
           community?: Database["public"]["Enums"]["community"] | null;
           created_at?: string;

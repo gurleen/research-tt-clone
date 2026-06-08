@@ -1,19 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
 import type { Tables } from "../../server/db/database.types.ts";
+import {
+  deactivateVideoResponseSchema,
+  reactivateVideoResponseSchema,
+} from "../../shared/api/admin-schemas.ts";
 import { useAdminAuth } from "../auth/AdminAuthProvider.tsx";
 import { VideosTable } from "../components/VideosTable.tsx";
 import { Alert } from "../../components/ui/alert.tsx";
 import { Button } from "../../components/ui/button.tsx";
+import { Label } from "../../components/ui/label.tsx";
 
 type VideoRow = Tables<"videos">;
 
 export function VideosPage() {
-  const { client } = useAdminAuth();
+  const { client, session } = useAdminAuth();
   const [videos, setVideos] = useState<VideoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [actionId, setActionId] = useState<string | null>(null);
+  const [showInactive, setShowInactive] = useState(false);
 
   const loadVideos = useCallback(async () => {
     if (!client) return;
@@ -21,10 +27,15 @@ export function VideosPage() {
     setLoading(true);
     setError(null);
 
-    const { data, error: queryError } = await client
-      .from("videos")
-      .select("*")
-      .order("created_at", { ascending: false });
+    let query = client.from("videos").select("*").order("created_at", {
+      ascending: false,
+    });
+
+    if (!showInactive) {
+      query = query.eq("active", true);
+    }
+
+    const { data, error: queryError } = await query;
 
     if (queryError) {
       setError(queryError.message);
@@ -34,31 +45,79 @@ export function VideosPage() {
     }
 
     setLoading(false);
-  }, [client]);
+  }, [client, showInactive]);
 
   useEffect(() => {
     loadVideos();
   }, [loadVideos]);
 
-  async function handleDelete(videoId: string) {
-    if (!client) return;
-    if (!window.confirm(`Delete video "${videoId}"?`)) return;
-
-    setDeletingId(videoId);
-    setError(null);
-
-    const { error: deleteError } = await client
-      .from("videos")
-      .delete()
-      .eq("video_id", videoId);
-
-    if (deleteError) {
-      setError(deleteError.message);
-    } else {
-      setVideos((current) => current.filter((video) => video.video_id !== videoId));
+  async function handleDeactivate(videoId: string) {
+    if (!session?.access_token) return;
+    if (
+      !window.confirm(
+        `Deactivate "${videoId}"? It will no longer appear in new sessions.`,
+      )
+    ) {
+      return;
     }
 
-    setDeletingId(null);
+    setActionId(videoId);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `/api/admin/videos/${encodeURIComponent(videoId)}/deactivate`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        },
+      );
+
+      const json = await response.json();
+      if (!response.ok) {
+        throw new Error(json.error ?? "Failed to deactivate video");
+      }
+
+      deactivateVideoResponseSchema.parse(json);
+      await loadVideos();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Deactivate failed");
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  async function handleReactivate(videoId: string) {
+    if (!session?.access_token) return;
+
+    setActionId(videoId);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `/api/admin/videos/${encodeURIComponent(videoId)}/reactivate`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        },
+      );
+
+      const json = await response.json();
+      if (!response.ok) {
+        throw new Error(json.error ?? "Failed to reactivate video");
+      }
+
+      reactivateVideoResponseSchema.parse(json);
+      await loadVideos();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Reactivate failed");
+    } finally {
+      setActionId(null);
+    }
   }
 
   return (
@@ -75,6 +134,19 @@ export function VideosPage() {
         </Button>
       </div>
 
+      <div className="flex items-center gap-2">
+        <input
+          id="show_inactive"
+          type="checkbox"
+          checked={showInactive}
+          onChange={(e) => setShowInactive(e.target.checked)}
+          className="h-4 w-4 rounded border-zinc-300"
+        />
+        <Label htmlFor="show_inactive" className="text-sm font-normal">
+          Show inactive videos
+        </Label>
+      </div>
+
       {error && <Alert variant="destructive">{error}</Alert>}
 
       {loading ? (
@@ -82,8 +154,9 @@ export function VideosPage() {
       ) : (
         <VideosTable
           videos={videos}
-          onDelete={handleDelete}
-          deletingId={deletingId}
+          actionId={actionId}
+          onDeactivate={handleDeactivate}
+          onReactivate={handleReactivate}
         />
       )}
     </div>

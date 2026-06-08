@@ -11,6 +11,8 @@ import { handleExport } from "./routes/export/get.ts";
 import { handleAdminConfig } from "./routes/admin/config.ts";
 import { handlePresignUpload } from "./routes/admin/uploads/presign.ts";
 import { handleAdminSessionSummary } from "./routes/admin/sessions/summary.ts";
+import { handleDeactivateVideo } from "./routes/admin/videos/deactivate.ts";
+import { handleReactivateVideo } from "./routes/admin/videos/reactivate.ts";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -52,6 +54,18 @@ async function routeRequest(req: Request): Promise<Response> {
 
   if (method === "POST" && pathname === "/api/admin/uploads/presign") {
     return handlePresignUpload(req);
+  }
+
+  const adminVideoMatch = pathname.match(
+    /^\/api\/admin\/videos\/([^/]+)\/(deactivate|reactivate)$/,
+  );
+  if (method === "POST" && adminVideoMatch) {
+    const videoId = adminVideoMatch[1]!;
+    const action = adminVideoMatch[2]!;
+    if (action === "deactivate") {
+      return handleDeactivateVideo(req, videoId);
+    }
+    return handleReactivateVideo(req, videoId);
   }
 
   const adminSessionMatch = pathname.match(

@@ -178,3 +178,18 @@ export const adminSessionSummarySchema = z.object({
 });
 
 export type AdminSessionSummary = z.infer<typeof adminSessionSummarySchema>;
+
+export const deactivateVideoResponseSchema = z.object({
+  video_id: z.string(),
+  active: z.literal(false),
+  r2_deleted: z.boolean(),
+  objects_removed: z.number().int().nonnegative(),
+});
+
+export const reactivateVideoResponseSchema = z.object({
+  video_id: z.string(),
+  active: z.literal(true),
+});
+
+export type DeactivateVideoResponse = z.infer<typeof deactivateVideoResponseSchema>;
+export type ReactivateVideoResponse = z.infer<typeof reactivateVideoResponseSchema>;

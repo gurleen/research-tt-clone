@@ -44,7 +44,8 @@ export async function composePlaylistSlots(
     .select("*")
     .eq("video_type", "ingroup")
     .eq("community", community)
-    .eq("source_type", sourceType);
+    .eq("source_type", sourceType)
+    .eq("active", true);
 
   if (ingroupError) {
     throw new Error(`Failed to load ingroup videos: ${ingroupError.message}`);
@@ -53,7 +54,8 @@ export async function composePlaylistSlots(
   const { data: fillerPool, error: fillerError } = await db
     .from("videos")
     .select("*")
-    .eq("video_type", "filler");
+    .eq("video_type", "filler")
+    .eq("active", true);
 
   if (fillerError) {
     throw new Error(`Failed to load filler videos: ${fillerError.message}`);

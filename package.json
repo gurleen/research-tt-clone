@@ -7,7 +7,8 @@
     "dev": "bun --hot src/index.ts",
     "start": "NODE_ENV=production bun src/index.ts",
     "build": "bun run build.ts",
-    "gen:types": "supabase gen types typescript --project-id ${SUPABASE_PROJECT_ID} > src/server/db/database.types.ts"
+    "gen:types": "supabase gen types typescript --project-id ${SUPABASE_PROJECT_ID} > src/server/db/database.types.ts",
+    "configure:r2-cors": "bun scripts/configure-r2-cors.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1063.0",

@@ -2,9 +2,11 @@ import { describe, expect, test } from "bun:test";
 import {
   adminConfigResponseSchema,
   adminSessionSummarySchema,
+  deactivateVideoResponseSchema,
   experimentConfigFormSchema,
   platformSettingsFormSchema,
   presignUploadBodySchema,
+  reactivateVideoResponseSchema,
   stubContentFormSchema,
   videoFormSchema,
 } from "../shared/api/admin-schemas.ts";
@@ -80,6 +82,47 @@ describe("admin schemas", () => {
       extension: "webm",
     });
     expect(parsed.kind).toBe("media");
+  });
+
+  test("deactivateVideoResponseSchema parses deactivate payload", () => {
+    const parsed = deactivateVideoResponseSchema.parse({
+      video_id: "ingroup_sikh_micro_01",
+      active: false,
+      r2_deleted: true,
+      objects_removed: 2,
+    });
+    expect(parsed.objects_removed).toBe(2);
+  });
+
+  test("reactivateVideoResponseSchema parses reactivate payload", () => {
+    const parsed = reactivateVideoResponseSchema.parse({
+      video_id: "ingroup_sikh_micro_01",
+      active: true,
+    });
+    expect(parsed.active).toBe(true);
+  });
+
+  test("parseCorsOrigins defaults to localhost dev origin", async () => {
+    const { parseCorsOrigins } = await import(
+      "../server/services/r2/configure-cors.ts"
+    );
+    expect(parseCorsOrigins(undefined)).toEqual(["http://localhost:3000"]);
+    expect(parseCorsOrigins("https://app.example.com, http://localhost:3000")).toEqual([
+      "https://app.example.com",
+      "http://localhost:3000",
+    ]);
+  });
+
+  test("validatePublicBaseUrl rejects private R2 API hostnames", async () => {
+    const { validatePublicBaseUrl } = await import(
+      "../server/services/r2/public-url.ts"
+    );
+    expect(() =>
+      validatePublicBaseUrl(
+        "https://my-bucket.account.r2.cloudflarestorage.com",
+      ),
+    ).toThrow(/r2\.cloudflarestorage\.com/);
+    expect(() => validatePublicBaseUrl("https://pub-abc123.r2.dev")).not.toThrow();
   });
 
   test("videoFormSchema requires condition fields for ingroup", () => {

@@ -4,6 +4,8 @@ import { env, isR2Configured } from "../../config/env.ts";
 import { ApiError } from "../../lib/http.ts";
 import type { PresignUploadBody } from "../../../shared/api/admin-schemas.ts";
 import { getR2Client } from "./client.ts";
+import { buildPublicObjectUrl } from "./public-url.ts";
+import { stimulusObjectKey } from "./object-keys.ts";
 
 export async function presignUpload(
   body: PresignUploadBody,
@@ -15,7 +17,7 @@ export async function presignUpload(
     );
   }
 
-  const key = `stimulus/${body.video_id}/${body.kind}.${body.extension}`;
+  const key = stimulusObjectKey(body.video_id, body.kind, body.extension);
 
   const command = new PutObjectCommand({
     Bucket: env.r2.bucketName,
@@ -27,7 +29,7 @@ export async function presignUpload(
     expiresIn: 60 * 15,
   });
 
-  const publicUrl = `${env.r2.publicBaseUrl}/${key}`;
+  const publicUrl = buildPublicObjectUrl(key);
 
   return {
     upload_url: uploadUrl,

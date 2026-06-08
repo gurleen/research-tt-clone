@@ -6,6 +6,7 @@ import {
 } from "../../shared/api/admin-schemas.ts";
 import { useAdminAuth } from "../auth/AdminAuthProvider.tsx";
 import { uploadToR2 } from "../lib/upload-to-r2.ts";
+import { readVideoDurationMs } from "../lib/read-video-duration.ts";
 import { Alert } from "../../components/ui/alert.tsx";
 import { Button } from "../../components/ui/button.tsx";
 import { FileInput } from "../../components/ui/file-input.tsx";
@@ -67,6 +68,7 @@ export function VideoForm({ initialVideo, onSaved, onCancel }: VideoFormProps) {
   const [uploadingThumb, setUploadingThumb] = useState(false);
   const [mediaFileName, setMediaFileName] = useState<string | null>(null);
   const [thumbnailFileName, setThumbnailFileName] = useState<string | null>(null);
+  const [durationWarning, setDurationWarning] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialVideo) {
@@ -124,7 +126,16 @@ export function VideoForm({ initialVideo, onSaved, onCancel }: VideoFormProps) {
     setMediaFileName(file.name);
     setUploadingMedia(true);
     setError(null);
+    setDurationWarning(null);
     try {
+      try {
+        const durationMs = await readVideoDurationMs(file);
+        updateField("duration_ms", durationMs);
+      } catch {
+        setDurationWarning(
+          "Could not detect video duration automatically. You can still save without it.",
+        );
+      }
       await handleFileUpload(file, "media");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Media upload failed");
@@ -196,6 +207,7 @@ export function VideoForm({ initialVideo, onSaved, onCancel }: VideoFormProps) {
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
       {error && <Alert variant="destructive">{error}</Alert>}
+      {durationWarning && <Alert>{durationWarning}</Alert>}
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2 md:col-span-2">
@@ -294,19 +306,12 @@ export function VideoForm({ initialVideo, onSaved, onCancel }: VideoFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="duration_ms">Duration (ms)</Label>
-          <Input
-            id="duration_ms"
-            type="number"
-            min={1}
-            value={form.duration_ms ?? ""}
-            onChange={(e) =>
-              updateField(
-                "duration_ms",
-                e.target.value ? Number(e.target.value) : null,
-              )
-            }
-          />
+          <Label htmlFor="duration_ms">Duration</Label>
+          <p id="duration_ms" className="text-sm text-zinc-600">
+            {form.duration_ms != null
+              ? `${(form.duration_ms / 1000).toFixed(1)} s (auto-detected from media)`
+              : "Upload a media file to detect duration automatically."}
+          </p>
         </div>
 
         {form.video_type === "ingroup" && (

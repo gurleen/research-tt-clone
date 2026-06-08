@@ -15,11 +15,17 @@ type VideoRow = Tables<"videos">;
 
 type VideosTableProps = {
   videos: VideoRow[];
-  onDelete: (videoId: string) => void;
-  deletingId: string | null;
+  onDeactivate: (videoId: string) => void;
+  onReactivate: (videoId: string) => void;
+  actionId: string | null;
 };
 
-export function VideosTable({ videos, onDelete, deletingId }: VideosTableProps) {
+export function VideosTable({
+  videos,
+  onDeactivate,
+  onReactivate,
+  actionId,
+}: VideosTableProps) {
   if (videos.length === 0) {
     return (
       <p className="rounded-md border border-dashed border-zinc-300 bg-white p-8 text-center text-sm text-zinc-500">
@@ -34,6 +40,7 @@ export function VideosTable({ videos, onDelete, deletingId }: VideosTableProps) 
         <TableHeader>
           <TableRow>
             <TableHead>Video ID</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Community</TableHead>
             <TableHead>Source</TableHead>
@@ -45,6 +52,11 @@ export function VideosTable({ videos, onDelete, deletingId }: VideosTableProps) 
           {videos.map((video) => (
             <TableRow key={video.video_id}>
               <TableCell className="font-mono text-xs">{video.video_id}</TableCell>
+              <TableCell>
+                <Badge variant={video.active ? "default" : "secondary"}>
+                  {video.active ? "Active" : "Inactive"}
+                </Badge>
+              </TableCell>
               <TableCell>
                 <Badge variant={video.video_type === "ingroup" ? "default" : "secondary"}>
                   {video.video_type}
@@ -58,14 +70,25 @@ export function VideosTable({ videos, onDelete, deletingId }: VideosTableProps) 
                   <Button variant="outline" size="sm" asChild>
                     <Link to={`/admin/videos/${video.video_id}`}>Edit</Link>
                   </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    disabled={deletingId === video.video_id}
-                    onClick={() => onDelete(video.video_id)}
-                  >
-                    {deletingId === video.video_id ? "Deleting…" : "Delete"}
-                  </Button>
+                  {video.active ? (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={actionId === video.video_id}
+                      onClick={() => onDeactivate(video.video_id)}
+                    >
+                      {actionId === video.video_id ? "Deactivating…" : "Deactivate"}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={actionId === video.video_id}
+                      onClick={() => onReactivate(video.video_id)}
+                    >
+                      {actionId === video.video_id ? "Reactivating…" : "Reactivate"}
+                    </Button>
+                  )}
                 </div>
               </TableCell>
             </TableRow>
