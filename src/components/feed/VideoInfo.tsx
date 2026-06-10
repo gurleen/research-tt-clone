@@ -12,7 +12,7 @@ export function VideoInfo({ video, sessionId, client }: VideoInfoProps) {
   const tags = video.hashtags ?? [];
 
   return (
-    <div className="absolute above-bottom-nav-sm left-3 right-20 text-left text-white pointer-events-none">
+    <div className="absolute above-bottom-nav-sm left-3 right-20 z-10 text-left text-white pointer-events-none">
       <p className="mb-1 text-base font-bold drop-shadow">
         @{video.creator.username}
       </p>
