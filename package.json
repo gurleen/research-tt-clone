@@ -8,7 +8,9 @@
     "start": "NODE_ENV=production bun src/index.ts",
     "build": "bun run build.ts",
     "gen:types": "supabase gen types typescript --project-id ${SUPABASE_PROJECT_ID} > src/server/db/database.types.ts",
-    "configure:r2-cors": "bun scripts/configure-r2-cors.ts"
+    "configure:r2-cors": "bun scripts/configure-r2-cors.ts",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1063.0",
@@ -32,6 +34,7 @@
     "@types/bun": "latest",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "supabase": "^2.105.0"
+    "supabase": "^2.105.0",
+    "wrangler": "^4.99.0"
   }
 }
