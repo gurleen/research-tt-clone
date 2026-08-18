@@ -8,16 +8,19 @@ export function useLikes() {
     [likedIds],
   );
 
-  const toggleLike = useCallback((videoId: string) => {
+  const toggleLike = useCallback((videoId: string): boolean => {
+    let liked = false;
     setLikedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(videoId)) {
-        next.delete(videoId);
-      } else {
+      liked = !next.has(videoId);
+      if (liked) {
         next.add(videoId);
+      } else {
+        next.delete(videoId);
       }
       return next;
     });
+    return liked;
   }, []);
 
   return { isLiked, toggleLike };

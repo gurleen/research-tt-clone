@@ -45,6 +45,31 @@ describe("shared API schemas", () => {
     expect(parsed.success).toBe(true);
   });
 
+  test("eventBodySchema accepts like payload", () => {
+    const parsed = eventBodySchema.safeParse({
+      event_id: "550e8400-e29b-41d4-a716-446655440000",
+      session_id: "550e8400-e29b-41d4-a716-446655440001",
+      event: "like",
+      video_id: "filler_01",
+      liked: true,
+      timestamp: "2026-08-18T12:00:00.000Z",
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  test("eventBodySchema rejects condition fields on like", () => {
+    const parsed = eventBodySchema.safeParse({
+      event_id: "550e8400-e29b-41d4-a716-446655440000",
+      session_id: "550e8400-e29b-41d4-a716-446655440001",
+      event: "like",
+      video_id: "filler_01",
+      liked: false,
+      timestamp: "2026-08-18T12:00:00.000Z",
+      source_type: "institutional",
+    });
+    expect(parsed.success).toBe(false);
+  });
+
   test("eventBodySchema rejects condition fields on video_view", () => {
     const parsed = eventBodySchema.safeParse({
       event_id: "550e8400-e29b-41d4-a716-446655440000",

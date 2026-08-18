@@ -308,6 +308,57 @@ export type Database = {
           },
         ];
       };
+      evt_like: {
+        Row: {
+          community: Database["public"]["Enums"]["community"];
+          event_id: string;
+          liked: boolean;
+          server_received_at: string;
+          session_id: string;
+          source_type: Database["public"]["Enums"]["source_type"];
+          timestamp: string;
+          video_id: string;
+          video_type: Database["public"]["Enums"]["video_type"];
+        };
+        Insert: {
+          community: Database["public"]["Enums"]["community"];
+          event_id: string;
+          liked: boolean;
+          server_received_at?: string;
+          session_id: string;
+          source_type: Database["public"]["Enums"]["source_type"];
+          timestamp: string;
+          video_id: string;
+          video_type: Database["public"]["Enums"]["video_type"];
+        };
+        Update: {
+          community?: Database["public"]["Enums"]["community"];
+          event_id?: string;
+          liked?: boolean;
+          server_received_at?: string;
+          session_id?: string;
+          source_type?: Database["public"]["Enums"]["source_type"];
+          timestamp?: string;
+          video_id?: string;
+          video_type?: Database["public"]["Enums"]["video_type"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "evt_like_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "sessions";
+            referencedColumns: ["session_id"];
+          },
+          {
+            foreignKeyName: "evt_like_video_id_fkey";
+            columns: ["video_id"];
+            isOneToOne: false;
+            referencedRelation: "videos";
+            referencedColumns: ["video_id"];
+          },
+        ];
+      };
       evt_playlist_complete: {
         Row: {
           event_id: string;

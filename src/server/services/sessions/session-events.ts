@@ -8,6 +8,7 @@ export const SESSION_EVENT_TABLES = [
   "evt_interest_prompt_display",
   "evt_interest_response",
   "evt_video_view",
+  "evt_like",
   "evt_playlist_complete",
   "evt_survey_complete",
 ] as const;

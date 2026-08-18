@@ -78,7 +78,7 @@ Env is read in `src/server/config/env.ts`. Copy `.env.example`.
 | Vertical snap feed | `src/components/feed/VideoFeed.tsx` |
 | Per-slide chrome | `VideoSlide`, `VideoPlayer`, `VideoOverlay`, `VideoInfo`, `SideActions` |
 | Feed index (free bidirectional scroll) | `src/hooks/useVideoCompletion.ts` |
-| Likes (client-only) | `src/hooks/useLikes.ts` |
+| Likes (in-memory UI + `like` events) | `src/hooks/useLikes.ts` |
 | Comments sheet (UI chrome) | `src/components/comments/` |
 | Phone frame + dummy top/bottom nav | `src/components/layout/` |
 | Playlist item → feed video | `src/study/map-playlist-item.ts` |
@@ -169,7 +169,7 @@ All `/api/*` requests run through IP-header stripping first (`src/server/middlew
 | `GET` | `/api/admin/sessions` | Admin session list (Bearer JWT) |
 | `GET` | `/api/admin/sessions/:id/summary` | Admin event summary |
 
-Event names: `content_link_display`, `content_link_click`, `content_stub_exit`, `interest_prompt_display`, `interest_response`, `video_view`, `playlist_complete`, `survey_complete`. Each needs a client-generated UUID `event_id`.
+Event names: `content_link_display`, `content_link_click`, `content_stub_exit`, `interest_prompt_display`, `interest_response`, `video_view`, `like`, `playlist_complete`, `survey_complete`. Each needs a client-generated UUID `event_id`.
 
 ## Experiment integrity (do not break)
 

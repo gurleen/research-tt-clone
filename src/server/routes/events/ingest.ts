@@ -8,6 +8,7 @@ import {
   writeContentStubExit,
   writeInterestPromptDisplay,
   writeInterestResponse,
+  writeLike,
   writePlaylistComplete,
   writeSurveyCompleteEvent,
   writeVideoView,
@@ -39,6 +40,8 @@ async function dispatchEvent(body: EventBody, origin: string) {
       return writeInterestResponse(body);
     case "video_view":
       return writeVideoView(body);
+    case "like":
+      return writeLike(body);
     case "playlist_complete":
       return writePlaylistComplete(body, origin);
     case "survey_complete":

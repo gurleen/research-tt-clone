@@ -140,6 +140,13 @@ export const videoViewEventSchema = eventBaseSchema.extend({
   ended_reason: z.enum(VIDEO_VIEW_ENDED_REASONS),
 });
 
+export const likeEventSchema = eventBaseSchema.extend({
+  event: z.literal("like"),
+  video_id: z.string(),
+  liked: z.boolean(),
+  timestamp: isoTimestamp,
+});
+
 export const playlistCompleteEventSchema = eventBaseSchema.extend({
   event: z.literal("playlist_complete"),
   timestamp: isoTimestamp,
@@ -157,6 +164,7 @@ export const eventBodySchema = z.discriminatedUnion("event", [
   interestPromptDisplayEventSchema,
   interestResponseEventSchema,
   videoViewEventSchema,
+  likeEventSchema,
   playlistCompleteEventSchema,
   surveyCompleteEventSchema,
 ]).superRefine((value, ctx) => {
@@ -182,6 +190,7 @@ export const eventBodySchema = z.discriminatedUnion("event", [
     "max_progress",
     "loop_count",
     "ended_reason",
+    "liked",
   ]);
   for (const key of allowedKeys) {
     if (!knownKeys.has(key)) {
