@@ -172,6 +172,8 @@ export function VideoFeed() {
         <CommentsSheet
           comments={commentsVideo.comments}
           count={commentsVideo.commentCount}
+          sessionId={session?.session_id}
+          videoId={commentsVideo.video_id}
           onClose={() => setCommentsVideo(null)}
         />
       )}

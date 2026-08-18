@@ -1,4 +1,5 @@
 import { db } from "../../db/client.ts";
+import { parseCatalogComments } from "../../../shared/api/schemas.ts";
 import type { SessionResponse } from "../../../shared/api/types.ts";
 import type { SessionRow } from "../../db/tables.ts";
 
@@ -18,7 +19,14 @@ export async function buildSessionResponse(
         duration_ms,
         account_name,
         account_handle,
-        profile_thumbnail_url
+        profile_thumbnail_url,
+        caption,
+        like_count,
+        comment_count,
+        follower_count,
+        share_count,
+        save_count,
+        comments
       )
     `,
     )
@@ -39,6 +47,13 @@ export async function buildSessionResponse(
       account_name: string;
       account_handle: string;
       profile_thumbnail_url: string;
+      caption: string;
+      like_count: number;
+      comment_count: number;
+      follower_count: number;
+      share_count: number;
+      save_count: number;
+      comments: unknown;
     };
 
     return {
@@ -52,6 +67,13 @@ export async function buildSessionResponse(
         account_handle: video.account_handle,
         profile_thumbnail_url: video.profile_thumbnail_url,
       },
+      caption: video.caption,
+      like_count: video.like_count,
+      comment_count: video.comment_count,
+      follower_count: video.follower_count,
+      share_count: video.share_count,
+      save_count: video.save_count,
+      comments: parseCatalogComments(video.comments),
       show_learn_more: video.video_type === "ingroup",
       show_interest_prompt: row.show_interest_prompt,
     };

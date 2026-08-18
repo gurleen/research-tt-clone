@@ -1,5 +1,4 @@
 export type {
-  Attribution,
   Community,
   EventName,
   EventTableName,
@@ -9,6 +8,8 @@ export type {
 } from "./events.ts";
 
 export type {
+  Attribution,
+  CatalogComment,
   CreateSessionBody,
   DebriefResponse,
   EventBody,
@@ -35,11 +36,13 @@ export {
 } from "./events.ts";
 
 export {
+  catalogCommentSchema,
   communitySchema,
   createSessionBodySchema,
   debriefResponseSchema,
   eventBodySchema,
   exportFormatSchema,
+  parseCatalogComments,
   patchPositionBodySchema,
   patchPositionResponseSchema,
   playlistItemSchema,

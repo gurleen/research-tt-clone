@@ -1,9 +1,10 @@
-import { FormEvent, useEffect, useState } from "react";
-import type { Tables, TablesInsert } from "../../server/db/database.types.ts";
+import { useEffect, useState, type FormEvent } from "react";
+import type { Json, Tables, TablesInsert } from "../../server/db/database.types.ts";
 import {
   videoFormSchema,
   type VideoFormValues,
 } from "../../shared/api/admin-schemas.ts";
+import { catalogCommentSchema } from "../../shared/api/schemas.ts";
 import { useAdminAuth } from "../auth/AdminAuthProvider.tsx";
 import { uploadToR2 } from "../lib/upload-to-r2.ts";
 import { readVideoDurationMs } from "../lib/read-video-duration.ts";
@@ -12,6 +13,7 @@ import { Button } from "../../components/ui/button.tsx";
 import { FileInput } from "../../components/ui/file-input.tsx";
 import { Input } from "../../components/ui/input.tsx";
 import { Label } from "../../components/ui/label.tsx";
+import { Textarea } from "../../components/ui/textarea.tsx";
 import {
   Select,
   SelectContent,
@@ -21,6 +23,7 @@ import {
 } from "../../components/ui/select.tsx";
 
 type VideoRow = Tables<"videos">;
+type VideoComment = VideoFormValues["comments"][number];
 
 const emptyForm: VideoFormValues = {
   video_id: "",
@@ -33,7 +36,38 @@ const emptyForm: VideoFormValues = {
   account_handle: "",
   duration_ms: null,
   central_issue: null,
+  caption: "",
+  like_count: 0,
+  comment_count: 0,
+  follower_count: 0,
+  share_count: 0,
+  save_count: 0,
+  comments: [],
 };
+
+function commentsFromRow(value: Json): VideoComment[] {
+  const parsed = catalogCommentSchema.array().safeParse(value);
+  return parsed.success ? parsed.data : [];
+}
+
+function normalizeComments(comments: VideoComment[]): VideoComment[] {
+  return comments
+    .filter((comment) => comment.username.trim() || comment.text.trim())
+    .map((comment) => {
+      const timestamp = comment.timestamp?.trim();
+      return {
+        username: comment.username.trim(),
+        text: comment.text.trim(),
+        ...(timestamp ? { timestamp } : {}),
+      };
+    });
+}
+
+function parseCount(value: string): number {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return parsed;
+}
 
 function rowToForm(row: VideoRow): VideoFormValues {
   return {
@@ -47,6 +81,13 @@ function rowToForm(row: VideoRow): VideoFormValues {
     account_handle: row.account_handle,
     duration_ms: row.duration_ms,
     central_issue: row.central_issue,
+    caption: row.caption,
+    like_count: row.like_count,
+    comment_count: row.comment_count,
+    follower_count: row.follower_count,
+    share_count: row.share_count,
+    save_count: row.save_count,
+    comments: commentsFromRow(row.comments),
   };
 }
 
@@ -95,6 +136,33 @@ export function VideoForm({ initialVideo, onSaved, onCancel }: VideoFormProps) {
 
       return next;
     });
+  }
+
+  function updateComment<K extends keyof VideoComment>(
+    index: number,
+    key: K,
+    value: VideoComment[K],
+  ) {
+    setForm((current) => ({
+      ...current,
+      comments: current.comments.map((comment, i) =>
+        i === index ? { ...comment, [key]: value } : comment,
+      ),
+    }));
+  }
+
+  function addComment() {
+    setForm((current) => ({
+      ...current,
+      comments: [...current.comments, { username: "", text: "" }],
+    }));
+  }
+
+  function removeComment(index: number) {
+    setForm((current) => ({
+      ...current,
+      comments: current.comments.filter((_, i) => i !== index),
+    }));
   }
 
   async function handleFileUpload(
@@ -163,7 +231,10 @@ export function VideoForm({ initialVideo, onSaved, onCancel }: VideoFormProps) {
     if (!client) return;
 
     setError(null);
-    const parsed = videoFormSchema.safeParse(form);
+    const parsed = videoFormSchema.safeParse({
+      ...form,
+      comments: normalizeComments(form.comments),
+    });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Validation failed");
       return;
@@ -182,6 +253,13 @@ export function VideoForm({ initialVideo, onSaved, onCancel }: VideoFormProps) {
       account_handle: parsed.data.account_handle,
       duration_ms: parsed.data.duration_ms ?? null,
       central_issue: parsed.data.central_issue ?? null,
+      caption: parsed.data.caption,
+      like_count: parsed.data.like_count,
+      comment_count: parsed.data.comment_count,
+      follower_count: parsed.data.follower_count,
+      share_count: parsed.data.share_count,
+      save_count: parsed.data.save_count,
+      comments: parsed.data.comments,
     };
 
     try {
@@ -305,6 +383,81 @@ export function VideoForm({ initialVideo, onSaved, onCancel }: VideoFormProps) {
           />
         </div>
 
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="caption">Caption</Label>
+          <Textarea
+            id="caption"
+            value={form.caption}
+            onChange={(e) => updateField("caption", e.target.value)}
+            placeholder="Overlay caption shown under the handle"
+            className="min-h-[80px]"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="like_count">Like count</Label>
+          <Input
+            id="like_count"
+            type="number"
+            min={0}
+            value={form.like_count}
+            onChange={(e) => updateField("like_count", parseCount(e.target.value))}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="comment_count">Comment count</Label>
+          <Input
+            id="comment_count"
+            type="number"
+            min={0}
+            value={form.comment_count}
+            onChange={(e) =>
+              updateField("comment_count", parseCount(e.target.value))
+            }
+          />
+          <p className="text-xs text-zinc-500">
+            Display baseline. Leave 0 to use the number of comments below.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="follower_count">Follower count</Label>
+          <Input
+            id="follower_count"
+            type="number"
+            min={0}
+            value={form.follower_count}
+            onChange={(e) =>
+              updateField("follower_count", parseCount(e.target.value))
+            }
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="share_count">Share count</Label>
+          <Input
+            id="share_count"
+            type="number"
+            min={0}
+            value={form.share_count}
+            onChange={(e) =>
+              updateField("share_count", parseCount(e.target.value))
+            }
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="save_count">Save count</Label>
+          <Input
+            id="save_count"
+            type="number"
+            min={0}
+            value={form.save_count}
+            onChange={(e) => updateField("save_count", parseCount(e.target.value))}
+          />
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="duration_ms">Duration</Label>
           <p id="duration_ms" className="text-sm text-zinc-600">
@@ -370,6 +523,81 @@ export function VideoForm({ initialVideo, onSaved, onCancel }: VideoFormProps) {
             </p>
           )}
         </div>
+      </div>
+
+      <div className="space-y-4 rounded-lg border border-zinc-200 bg-white p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-medium text-zinc-900">Comments</h2>
+            <p className="text-xs text-zinc-500">
+              Read-only stimulus comments shown in the sheet. Timestamp is display
+              text such as &quot;2d ago&quot;.
+            </p>
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={addComment}>
+            Add comment
+          </Button>
+        </div>
+
+        {form.comments.length === 0 ? (
+          <p className="text-sm text-zinc-500">No comments yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {form.comments.map((comment, index) => (
+              <div
+                key={index}
+                className="grid gap-3 rounded-md border border-zinc-200 p-3 md:grid-cols-[1fr_1fr_auto]"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor={`comment-username-${index}`}>Username</Label>
+                  <Input
+                    id={`comment-username-${index}`}
+                    value={comment.username}
+                    onChange={(e) =>
+                      updateComment(index, "username", e.target.value)
+                    }
+                    placeholder="foodie_forever"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`comment-timestamp-${index}`}>
+                    Timestamp (optional)
+                  </Label>
+                  <Input
+                    id={`comment-timestamp-${index}`}
+                    value={comment.timestamp ?? ""}
+                    onChange={(e) =>
+                      updateComment(index, "timestamp", e.target.value)
+                    }
+                    placeholder="2d ago"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeComment(index)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+                <div className="space-y-2 md:col-span-3">
+                  <Label htmlFor={`comment-text-${index}`}>Text</Label>
+                  <Textarea
+                    id={`comment-text-${index}`}
+                    value={comment.text}
+                    onChange={(e) =>
+                      updateComment(index, "text", e.target.value)
+                    }
+                    placeholder="Comment body"
+                    className="min-h-[72px]"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex gap-3">

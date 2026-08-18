@@ -20,6 +20,13 @@ function mockVideo(id: string, type: "ingroup" | "filler"): VideoRow {
     central_issue: null,
     created_at: "2026-01-01T00:00:00.000Z",
     active: true,
+    caption: "",
+    like_count: 0,
+    comment_count: 0,
+    follower_count: 0,
+    share_count: 0,
+    save_count: 0,
+    comments: [],
   };
 }
 

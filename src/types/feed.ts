@@ -20,6 +20,7 @@ export type FeedVideo = {
   commentCount: number;
   shareCount: number;
   saveCount?: number;
+  followerCount?: number;
   comments: FeedComment[];
 };
 

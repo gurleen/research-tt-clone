@@ -79,7 +79,7 @@ Env is read in `src/server/config/env.ts`. Copy `.env.example`.
 | Per-slide chrome | `VideoSlide`, `VideoPlayer`, `VideoOverlay`, `VideoInfo`, `SideActions` |
 | Feed index (free bidirectional scroll) | `src/hooks/useVideoCompletion.ts` |
 | Likes (in-memory UI + `like` events) | `src/hooks/useLikes.ts` |
-| Comments sheet (UI chrome) | `src/components/comments/` |
+| Comments sheet (catalog comments + `comments_open`) | `src/components/comments/` |
 | Phone frame + dummy top/bottom nav | `src/components/layout/` |
 | Playlist item → feed video | `src/study/map-playlist-item.ts` |
 | HTTP + sendBeacon helpers | `src/client/platform-api.ts`, `src/study/events.ts` |
@@ -139,7 +139,7 @@ Schema lives in `supabase/migrations/` (RLS + `platform_settings`; core experime
 
 Typed accessors: `src/server/db/tables.ts` (wraps generated `database.types.ts`). Server client uses the **secret** key (`src/server/db/client.ts`). Admin browser client uses the **publishable** key + RLS (`src/admin/lib/supabase-browser.ts`).
 
-Tables that matter: `videos`, `stub_content`, `experiment_config`, `sessions`, `session_videos`, `platform_settings`, plus `evt_*` event tables.
+Tables that matter: `videos` (including caption, comments JSONB, and social-stat counts), `stub_content`, `experiment_config`, `sessions`, `session_videos`, `platform_settings`, plus `evt_*` event tables.
 
 ### Shared contracts
 
@@ -169,7 +169,7 @@ All `/api/*` requests run through IP-header stripping first (`src/server/middlew
 | `GET` | `/api/admin/sessions` | Admin session list (Bearer JWT) |
 | `GET` | `/api/admin/sessions/:id/summary` | Admin event summary |
 
-Event names: `content_link_display`, `content_link_click`, `content_stub_exit`, `interest_prompt_display`, `interest_response`, `video_view`, `like`, `playlist_complete`, `survey_complete`. Each needs a client-generated UUID `event_id`.
+Event names: `content_link_display`, `content_link_click`, `content_stub_exit`, `interest_prompt_display`, `interest_response`, `video_view`, `like`, `comments_open`, `playlist_complete`, `survey_complete`. Each needs a client-generated UUID `event_id`.
 
 ## Experiment integrity (do not break)
 

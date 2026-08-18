@@ -68,6 +68,7 @@ describe("admin schemas", () => {
         evt_interest_response: 0,
         evt_video_view: 0,
         evt_like: 0,
+        evt_comments_open: 0,
         evt_playlist_complete: 0,
         evt_survey_complete: 0,
       },
@@ -85,6 +86,7 @@ describe("admin schemas", () => {
         evt_interest_response: [],
         evt_video_view: [],
         evt_like: [],
+        evt_comments_open: [],
         evt_playlist_complete: [],
         evt_survey_complete: [],
       },
@@ -194,6 +196,56 @@ describe("admin schemas", () => {
       account_handle: "@creator",
     });
     expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.caption).toBe("");
+      expect(parsed.data.like_count).toBe(0);
+      expect(parsed.data.comments).toEqual([]);
+    }
+  });
+
+  test("videoFormSchema accepts caption, counts, and comments", () => {
+    const parsed = videoFormSchema.parse({
+      video_id: "filler_01",
+      video_type: "filler",
+      community: null,
+      source_type: null,
+      media_url: "https://example.com/a.webm",
+      profile_thumbnail_url: "https://example.com/t.jpg",
+      account_name: "Creator",
+      account_handle: "@creator",
+      caption: "Hello from the overlay",
+      like_count: 1200,
+      comment_count: 45,
+      follower_count: 8800,
+      share_count: 12,
+      save_count: 4,
+      comments: [
+        { username: "fan", text: "nice clip", timestamp: "2d ago" },
+        { username: "other", text: "looping this" },
+      ],
+    });
+    expect(parsed.caption).toBe("Hello from the overlay");
+    expect(parsed.follower_count).toBe(8800);
+    expect(parsed.comments).toHaveLength(2);
+    expect(parsed.comments[1]).toEqual({
+      username: "other",
+      text: "looping this",
+    });
+  });
+
+  test("videoFormSchema rejects incomplete comments", () => {
+    const parsed = videoFormSchema.safeParse({
+      video_id: "filler_01",
+      video_type: "filler",
+      community: null,
+      source_type: null,
+      media_url: "https://example.com/a.webm",
+      profile_thumbnail_url: "https://example.com/t.jpg",
+      account_name: "Creator",
+      account_handle: "@creator",
+      comments: [{ username: "fan", text: "" }],
+    });
+    expect(parsed.success).toBe(false);
   });
 
   test("stubContentFormSchema converts empty body to null", () => {

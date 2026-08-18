@@ -159,6 +159,26 @@ export async function writeLike(
   });
 }
 
+export async function writeCommentsOpen(
+  body: Extract<EventBody, { event: "comments_open" }>,
+): Promise<{ duplicate: boolean }> {
+  const { session, video } = await enrichVideoEvent(
+    body.session_id,
+    body.video_id,
+  );
+
+  return idempotentInsert("evt_comments_open", {
+    event_id: body.event_id,
+    session_id: body.session_id,
+    video_id: body.video_id,
+    video_type: video.video_type,
+    source_type: session.source_type,
+    community: session.community,
+    timestamp_open: body.timestamp_open,
+    time_on_sheet_ms: body.time_on_sheet_ms,
+  });
+}
+
 export async function writePlaylistComplete(
   body: Extract<EventBody, { event: "playlist_complete" }>,
   origin: string,

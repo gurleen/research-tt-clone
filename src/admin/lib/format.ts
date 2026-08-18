@@ -48,6 +48,7 @@ export const EVENT_TABLE_LABELS = {
   evt_interest_response: "Interest answers",
   evt_video_view: "Video views",
   evt_like: "Likes",
+  evt_comments_open: "Comments opened",
   evt_playlist_complete: "Playlist complete",
   evt_survey_complete: "Survey complete",
 } as const;

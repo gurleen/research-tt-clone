@@ -6,6 +6,7 @@ export const EVENT_NAMES = [
   "interest_response",
   "video_view",
   "like",
+  "comments_open",
   "playlist_complete",
   "survey_complete",
 ] as const;
@@ -37,6 +38,7 @@ export type EventTableName =
   | "evt_interest_response"
   | "evt_video_view"
   | "evt_like"
+  | "evt_comments_open"
   | "evt_playlist_complete"
   | "evt_survey_complete";
 
@@ -48,6 +50,7 @@ export const EVENT_TO_TABLE: Record<EventName, EventTableName> = {
   interest_response: "evt_interest_response",
   video_view: "evt_video_view",
   like: "evt_like",
+  comments_open: "evt_comments_open",
   playlist_complete: "evt_playlist_complete",
   survey_complete: "evt_survey_complete",
 };
@@ -60,6 +63,7 @@ export const VIDEO_EVENTS: EventName[] = [
   "interest_response",
   "video_view",
   "like",
+  "comments_open",
 ];
 
 export const SESSION_ONLY_EVENTS: EventName[] = [
