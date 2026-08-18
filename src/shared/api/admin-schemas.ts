@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { catalogCommentSchema } from "./schemas.ts";
 
 export const presignUploadBodySchema = z.object({
   video_id: z
@@ -41,6 +42,13 @@ export const videoFormSchema = z
     account_handle: z.string().min(1),
     duration_ms: z.number().int().positive().nullable().optional(),
     central_issue: z.string().nullable().optional(),
+    caption: z.string().default(""),
+    like_count: z.number().int().nonnegative().default(0),
+    comment_count: z.number().int().nonnegative().default(0),
+    follower_count: z.number().int().nonnegative().default(0),
+    share_count: z.number().int().nonnegative().default(0),
+    save_count: z.number().int().nonnegative().default(0),
+    comments: z.array(catalogCommentSchema).default([]),
   })
   .superRefine((value, ctx) => {
     if (value.video_type === "ingroup") {
@@ -159,6 +167,9 @@ const sessionEventTableSchema = z.enum([
   "evt_content_stub_exit",
   "evt_interest_prompt_display",
   "evt_interest_response",
+  "evt_video_view",
+  "evt_like",
+  "evt_comments_open",
   "evt_playlist_complete",
   "evt_survey_complete",
 ]);
@@ -194,9 +205,20 @@ export const adminSessionListResponseSchema = z.object({
   total: z.number().int().nonnegative(),
 });
 
+export const adminSessionPlaylistItemSchema = z.object({
+  position: z.number().int().nonnegative(),
+  video_id: z.string(),
+  video_type: z.enum(["ingroup", "filler"]),
+  account_name: z.string(),
+  account_handle: z.string(),
+  show_learn_more: z.boolean(),
+  show_interest_prompt: z.boolean(),
+});
+
 export const adminSessionSummarySchema = z.object({
   session: adminSessionListItemSchema,
   playlist_length: z.number().int().nonnegative(),
+  playlist: z.array(adminSessionPlaylistItemSchema),
   event_counts: z.record(sessionEventTableSchema, z.number().int().nonnegative()),
   events: z.record(sessionEventTableSchema, z.array(z.record(z.string(), z.unknown()))),
 });
@@ -205,6 +227,9 @@ export type AdminSessionListItem = z.infer<typeof adminSessionListItemSchema>;
 export type AdminSessionListQuery = z.infer<typeof adminSessionListQuerySchema>;
 export type AdminSessionListResponse = z.infer<
   typeof adminSessionListResponseSchema
+>;
+export type AdminSessionPlaylistItem = z.infer<
+  typeof adminSessionPlaylistItemSchema
 >;
 export type AdminSessionSummary = z.infer<typeof adminSessionSummarySchema>;
 

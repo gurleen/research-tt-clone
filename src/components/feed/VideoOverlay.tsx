@@ -22,7 +22,8 @@ type VideoOverlayProps = {
   onSwipeUp: () => void;
   onSwipeDown: () => void;
   onTimeUpdate: (currentTime: number, duration: number) => void;
-  onEnded: () => void;
+  onLoop: () => void;
+  onPlayingChange: (playing: boolean) => void;
 };
 
 export function VideoOverlay({
@@ -39,7 +40,8 @@ export function VideoOverlay({
   onSwipeUp,
   onSwipeDown,
   onTimeUpdate,
-  onEnded,
+  onLoop,
+  onPlayingChange,
 }: VideoOverlayProps) {
   const [userPaused, setUserPaused] = useState(false);
   const [promptDismissed, setPromptDismissed] = useState(false);
@@ -72,7 +74,8 @@ export function VideoOverlay({
         isActive={isActive}
         userPaused={userPaused}
         onTimeUpdate={onTimeUpdate}
-        onEnded={onEnded}
+        onLoop={onLoop}
+        onPlayingChange={onPlayingChange}
       />
       <VideoInteractionLayer
         isActive={isActive}

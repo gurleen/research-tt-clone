@@ -48,6 +48,17 @@ describe("admin schemas", () => {
         assigned_at: "2026-06-08T12:00:00.000Z",
       },
       playlist_length: 10,
+      playlist: [
+        {
+          position: 0,
+          video_id: "ingroup_sikh_micro_01",
+          video_type: "ingroup",
+          account_name: "Creator",
+          account_handle: "@creator",
+          show_learn_more: true,
+          show_interest_prompt: false,
+        },
+      ],
       event_counts: {
         evt_session_start: 1,
         evt_content_link_display: 0,
@@ -55,6 +66,9 @@ describe("admin schemas", () => {
         evt_content_stub_exit: 0,
         evt_interest_prompt_display: 0,
         evt_interest_response: 0,
+        evt_video_view: 0,
+        evt_like: 0,
+        evt_comments_open: 0,
         evt_playlist_complete: 0,
         evt_survey_complete: 0,
       },
@@ -70,11 +84,39 @@ describe("admin schemas", () => {
         evt_content_stub_exit: [],
         evt_interest_prompt_display: [],
         evt_interest_response: [],
+        evt_video_view: [],
+        evt_like: [],
+        evt_comments_open: [],
         evt_playlist_complete: [],
         evt_survey_complete: [],
       },
     });
     expect(parsed.playlist_length).toBe(10);
+    expect(parsed.playlist[0]?.video_id).toBe("ingroup_sikh_micro_01");
+  });
+
+  test("adminSessionListResponseSchema parses session list payload", () => {
+    const parsed = adminSessionListResponseSchema.parse({
+      sessions: [
+        {
+          session_id: "550e8400-e29b-41d4-a716-446655440000",
+          community: "sikh",
+          source_type: "micro_influencer",
+          status: "in_progress",
+          current_position: 3,
+          assigned_at: "2026-06-08T12:00:00.000Z",
+        },
+      ],
+      total: 1,
+    });
+    expect(parsed.total).toBe(1);
+    expect(parsed.sessions[0]?.community).toBe("sikh");
+  });
+
+  test("adminSessionListQuerySchema defaults limit and offset", () => {
+    const parsed = adminSessionListQuerySchema.parse({});
+    expect(parsed.limit).toBe(50);
+    expect(parsed.offset).toBe(0);
   });
 
   test("adminSessionListResponseSchema parses session list payload", () => {
@@ -178,6 +220,56 @@ describe("admin schemas", () => {
       account_handle: "@creator",
     });
     expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.caption).toBe("");
+      expect(parsed.data.like_count).toBe(0);
+      expect(parsed.data.comments).toEqual([]);
+    }
+  });
+
+  test("videoFormSchema accepts caption, counts, and comments", () => {
+    const parsed = videoFormSchema.parse({
+      video_id: "filler_01",
+      video_type: "filler",
+      community: null,
+      source_type: null,
+      media_url: "https://example.com/a.webm",
+      profile_thumbnail_url: "https://example.com/t.jpg",
+      account_name: "Creator",
+      account_handle: "@creator",
+      caption: "Hello from the overlay",
+      like_count: 1200,
+      comment_count: 45,
+      follower_count: 8800,
+      share_count: 12,
+      save_count: 4,
+      comments: [
+        { username: "fan", text: "nice clip", timestamp: "2d ago" },
+        { username: "other", text: "looping this" },
+      ],
+    });
+    expect(parsed.caption).toBe("Hello from the overlay");
+    expect(parsed.follower_count).toBe(8800);
+    expect(parsed.comments).toHaveLength(2);
+    expect(parsed.comments[1]).toEqual({
+      username: "other",
+      text: "looping this",
+    });
+  });
+
+  test("videoFormSchema rejects incomplete comments", () => {
+    const parsed = videoFormSchema.safeParse({
+      video_id: "filler_01",
+      video_type: "filler",
+      community: null,
+      source_type: null,
+      media_url: "https://example.com/a.webm",
+      profile_thumbnail_url: "https://example.com/t.jpg",
+      account_name: "Creator",
+      account_handle: "@creator",
+      comments: [{ username: "fan", text: "" }],
+    });
+    expect(parsed.success).toBe(false);
   });
 
   test("stubContentFormSchema converts empty body to null", () => {

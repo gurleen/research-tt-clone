@@ -1,13 +1,15 @@
 export type {
-  Attribution,
   Community,
   EventName,
   EventTableName,
   SourceType,
   VideoType,
+  VideoViewEndedReason,
 } from "./events.ts";
 
 export type {
+  Attribution,
+  CatalogComment,
   CreateSessionBody,
   DebriefResponse,
   EventBody,
@@ -30,14 +32,17 @@ export {
   SOURCE_TYPES,
   VIDEO_EVENTS,
   VIDEO_TYPES,
+  VIDEO_VIEW_ENDED_REASONS,
 } from "./events.ts";
 
 export {
+  catalogCommentSchema,
   communitySchema,
   createSessionBodySchema,
   debriefResponseSchema,
   eventBodySchema,
   exportFormatSchema,
+  parseCatalogComments,
   patchPositionBodySchema,
   patchPositionResponseSchema,
   playlistItemSchema,

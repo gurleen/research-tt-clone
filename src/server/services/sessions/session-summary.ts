@@ -1,10 +1,18 @@
 import { db } from "../../db/client.ts";
 import { ApiError } from "../../lib/http.ts";
 import type { SessionRow } from "../../db/tables.ts";
+import type { AdminSessionPlaylistItem } from "../../../shared/api/admin-schemas.ts";
 import {
   countSessionEvents,
   loadSessionEvents,
 } from "./session-events.ts";
+
+type PlaylistVideo = {
+  video_id: string;
+  video_type: "ingroup" | "filler";
+  account_name: string;
+  account_handle: string;
+};
 
 export type SessionSummary = {
   session: {
@@ -16,9 +24,53 @@ export type SessionSummary = {
     assigned_at: string;
   };
   playlist_length: number;
+  playlist: AdminSessionPlaylistItem[];
   event_counts: ReturnType<typeof countSessionEvents>;
   events: Awaited<ReturnType<typeof loadSessionEvents>>;
 };
+
+async function loadSessionPlaylist(
+  sessionId: string,
+): Promise<AdminSessionPlaylistItem[]> {
+  const { data: rows, error } = await db
+    .from("session_videos")
+    .select(
+      `
+      position,
+      video_id,
+      show_interest_prompt,
+      videos (
+        video_id,
+        video_type,
+        account_name,
+        account_handle
+      )
+    `,
+    )
+    .eq("session_id", sessionId)
+    .order("position", { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to load playlist: ${error.message}`);
+  }
+
+  return (rows ?? []).map((row) => {
+    const videoRaw = row.videos;
+    const video = (
+      Array.isArray(videoRaw) ? videoRaw[0] : videoRaw
+    ) as PlaylistVideo | null;
+
+    return {
+      position: row.position,
+      video_id: video?.video_id ?? row.video_id,
+      video_type: video?.video_type ?? "filler",
+      account_name: video?.account_name ?? "—",
+      account_handle: video?.account_handle ?? "—",
+      show_learn_more: video?.video_type === "ingroup",
+      show_interest_prompt: row.show_interest_prompt,
+    };
+  });
+}
 
 export async function buildSessionSummary(
   sessionId: string,
@@ -36,16 +88,10 @@ export async function buildSessionSummary(
     throw new ApiError(404, "Session not found");
   }
 
-  const { count, error: countError } = await db
-    .from("session_videos")
-    .select("*", { count: "exact", head: true })
-    .eq("session_id", sessionId);
-
-  if (countError) {
-    throw new Error(`Failed to count playlist: ${countError.message}`);
-  }
-
-  const events = await loadSessionEvents(sessionId);
+  const [playlist, events] = await Promise.all([
+    loadSessionPlaylist(sessionId),
+    loadSessionEvents(sessionId),
+  ]);
 
   return {
     session: {
@@ -56,7 +102,8 @@ export async function buildSessionSummary(
       current_position: session.current_position,
       assigned_at: session.assigned_at,
     },
-    playlist_length: count ?? 0,
+    playlist_length: playlist.length,
+    playlist,
     event_counts: countSessionEvents(events),
     events,
   };

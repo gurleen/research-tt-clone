@@ -20,8 +20,8 @@ the layer that can actually guarantee them:
   or `community`. Refresh/reconnect re-reads the existing row, never re-rolls.
 - **No PII, ever.** There are no `ip`, `geo`, or `cint_id` columns anywhere.
   IP stripping is middleware that runs before body parsing and logging, so the
-  address never reaches application code. Nothing to leak because nothing is
-  stored.
+  address never reaches application code. `sessions.external_id` is an anonymous
+  Qualtrics ResponseID join token, not a Cint panel ID.
 - **The client never supplies condition fields.** Requests send `session_id`,
   `video_id`, and timing only. The server fills `source_type`, `community`, and
   `video_type` from the session/video rows. A participant can't spoof their own
@@ -61,6 +61,15 @@ create table videos (
   account_name          text not null,
   account_handle        text not null,
   profile_thumbnail_url text not null,
+
+  -- feed chrome (researcher-authored; like_count is a display baseline)
+  caption         text not null default '',
+  like_count      integer not null default 0,
+  comment_count   integer not null default 0,
+  follower_count  integer not null default 0,
+  share_count     integer not null default 0,
+  save_count      integer not null default 0,
+  comments        jsonb not null default '[]',  -- [{ username, text, timestamp? }]
 
   central_issue text,                       -- metadata for ingroup videos
   created_at    timestamptz not null default now(),
@@ -114,7 +123,8 @@ create table sessions (
   current_position integer     not null default 0,   -- resume index; advances monotonically
   status           text        not null default 'in_progress'
     check (status in ('in_progress','playlist_complete','survey_complete','debriefed')),
-  created_at       timestamptz not null default now()
+  created_at       timestamptz not null default now(),
+  external_id      text unique  -- Qualtrics ResponseID join token; nullable for staging test sessions
   -- deliberately NO ip / geo / cint_id columns
 );
 
@@ -224,6 +234,51 @@ create table evt_interest_response (
   server_received_at timestamptz not null default now()
 );
 
+-- One row per visit to a video (first view vs return vs rewatch).
+create table evt_video_view (
+  event_id           uuid primary key,
+  session_id         uuid not null references sessions(session_id),
+  video_id           text not null references videos(video_id),
+  video_type         video_type  not null,
+  source_type        source_type not null,
+  community          community   not null,
+  visit_index        integer     not null,
+  started_at         timestamptz not null,
+  ended_at           timestamptz not null,
+  dwell_ms           integer     not null,
+  playback_ms        integer     not null,
+  max_progress       double precision not null,
+  loop_count         integer     not null,
+  ended_reason       text        not null,  -- swipe | hidden | pagehide | playlist_complete
+  server_received_at timestamptz not null default now()
+);
+
+-- One row per like/unlike toggle (behavioral DV, not a social graph).
+create table evt_like (
+  event_id           uuid primary key,
+  session_id         uuid not null references sessions(session_id),
+  video_id           text not null references videos(video_id),
+  video_type         video_type  not null,
+  source_type        source_type not null,
+  community          community   not null,
+  liked              boolean     not null,  -- true = like, false = unlike
+  "timestamp"        timestamptz not null,
+  server_received_at timestamptz not null default now()
+);
+
+-- One row per comments-sheet open; written on close with time on sheet.
+create table evt_comments_open (
+  event_id           uuid primary key,
+  session_id         uuid not null references sessions(session_id),
+  video_id           text not null references videos(video_id),
+  video_type         video_type  not null,
+  source_type        source_type not null,
+  community          community   not null,
+  timestamp_open     timestamptz not null,
+  time_on_sheet_ms   integer     not null,
+  server_received_at timestamptz not null default now()
+);
+
 -- One per session; unique constraint makes completion idempotent.
 create table evt_playlist_complete (
   event_id           uuid primary key,
@@ -244,6 +299,9 @@ create index on evt_content_link_click      (session_id);
 create index on evt_content_stub_exit       (session_id);
 create index on evt_interest_prompt_display (session_id);
 create index on evt_interest_response       (session_id);
+create index on evt_video_view              (session_id);
+create index on evt_like                    (session_id);
+create index on evt_comments_open           (session_id);
 ```
 
 ## Deferred — Section 6 familiarity block (not built yet)
@@ -276,12 +334,14 @@ create table evt_familiarity_response (
 
 ## Resume / reconnect strategy
 
-The 8 logged events don't fire on every video (a filler with no prompt logs
-nothing), so position can't be reconstructed from events alone. The session row
-holds `current_position`, bumped as the participant advances. On
-refresh/reconnect the client does `GET /api/sessions/:id`, gets the same
+The session row holds `current_position`, a monotonic high-water mark bumped
+only when the feed advances past the furthest reached index. Rewind is
+client-only and must not PATCH a lower value. Per-visit dwell is logged as
+`video_view` (`dwell_ms`, `playback_ms`, `visit_index`, `loop_count`). Playlist
+complete is an explicit Continue control on the last slide, not `videoEnded`.
+On refresh/reconnect the client does `GET /api/sessions/:id`, gets the same
 condition, the same `session_videos` order, and `current_position`, and resumes
-there. No re-randomization, no new `session_start`.
+at furthest reached. No re-randomization, no new `session_start`.
 
 ---
 
@@ -293,10 +353,18 @@ are idempotent on `event_id`.
 ### Session lifecycle
 
 **`POST /api/sessions`** — initialize a participant.
-- Input: `community` from the recruitment link param (e.g. `?community=sikh`).
-  Recruitment/Cint params are read for routing but never persisted.
-- Server: generate UUID → balanced randomization of `source_type` (block or
-  stratified, per-community counters) → insert `sessions` → read
+- Input: `community` from the recruitment link param (e.g. `?community=sikh`)
+  and optional `external_id` (Qualtrics ResponseID, typically `R_` +
+  alphanumerics). Production requires `external_id` so bare `?community=`
+  cannot mint sessions. Staging (`STAGING_MODE=true`) may omit it for
+  `/admin/test-session`. Recruitment/Cint params are never persisted;
+  `external_id` is the only recruitment token stored (anonymous join key).
+- If `external_id` already exists and `status = in_progress`, restore that
+  session (same condition and playlist, no re-roll). If status is
+  `playlist_complete` / `survey_complete` / `debriefed`, return 409
+  ("this link has already been used").
+- Server (new token): generate UUID → balanced randomization of `source_type`
+  (block or stratified, per-community counters) → insert `sessions` → read
   `experiment_config` for the community → compose playlist (pick ingroup and
   filler counts within their configured ranges, select ingroup matching
   `community`+`source_type`, shuffle interleaved with filler, apply the prompt
@@ -307,13 +375,16 @@ are idempotent on `event_id`.
   show_learn_more, show_interest_prompt }`.
   `source_type` is not surfaced as a label — it's implicit in which ingroup
   videos are served, so the UI can't accidentally reveal the condition.
+  Survey handoff URLs may include `session_id`, `external_id`, and `status`;
+  they must not include `source_type`.
 
 **`GET /api/sessions/:session_id`** — restore on refresh/reconnect. Same
 condition, same order, same `current_position`. Idempotent read.
 
 **`PATCH /api/sessions/:session_id/position`** — advance the resume pointer.
 Body `{ position }`. Monotonic; a request to move backward is rejected. Called
-by the client when a `videoEnded` gate clears and the feed moves on.
+by the client only when the feed index exceeds the high-water mark. Rewind
+must not PATCH a lower index.
 
 ### Stub
 
@@ -385,7 +456,11 @@ arm. The override is rejected in production.
 | Randomized order, persisted | `session_videos` rows written once at creation |
 | Correct video set per condition | Playlist composer filters `videos` by `community`+`source_type` |
 | Source handle non-functional | Frontend; API exposes attribution as data only, no URL |
-| Advancement only on videoEnded | Frontend gate + `PATCH /position` monotonic check |
+| Resume pointer monotonic (high-water) | `PATCH /position` rejects backward; client skips rewind PATCHes |
+| Per-visit dwell logged | `evt_video_view`; client sends timing only, server enriches condition |
+| Like/unlike logged | `evt_like`; client sends `liked` only, server enriches condition |
+| Comments sheet open logged | `evt_comments_open`; client sends open time + `time_on_sheet_ms`, server enriches condition |
+| Playlist complete without `ended` | Continue on last slide → `playlist_complete` → survey URL redirect |
 | Identical badge across conditions | API returns identical badge config; only attribution differs |
 | Log click before navigation | `sendBeacon` on click + thin insert handler |
 | Stub body constant, attribution-only difference | `stub_content` keyed by community; attribution from video |

@@ -1,50 +1,16 @@
 import { useCallback, useState } from "react";
 
-const COMPLETION_THRESHOLD = 0.95;
-
+/** Feed index only — forward motion is not gated on watch time. */
 export function useVideoCompletion(initialIndex = 0) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [completedIndices, setCompletedIndices] = useState<
-    Record<number, boolean>
-  >({});
 
-  const isCurrentComplete = completedIndices[currentIndex] ?? false;
-  const canGoForward = isCurrentComplete;
-
-  const markComplete = useCallback((index: number) => {
-    setCompletedIndices((prev) => ({ ...prev, [index]: true }));
+  const goToIndex = useCallback((nextIndex: number) => {
+    setCurrentIndex(nextIndex);
+    return true;
   }, []);
-
-  const handleTimeUpdate = useCallback(
-    (index: number, currentTime: number, duration: number) => {
-      if (duration > 0 && currentTime / duration >= COMPLETION_THRESHOLD) {
-        markComplete(index);
-      }
-    },
-    [markComplete],
-  );
-
-  const handleEnded = useCallback(
-    (index: number) => {
-      markComplete(index);
-    },
-    [markComplete],
-  );
-
-  const goToIndex = useCallback(
-    (nextIndex: number) => {
-      if (nextIndex > currentIndex && !canGoForward) return false;
-      setCurrentIndex(nextIndex);
-      return true;
-    },
-    [currentIndex, canGoForward],
-  );
 
   return {
     currentIndex,
-    canGoForward,
-    handleTimeUpdate,
-    handleEnded,
     goToIndex,
   };
 }

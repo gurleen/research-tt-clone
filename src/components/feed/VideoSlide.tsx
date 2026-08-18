@@ -16,7 +16,8 @@ type VideoSlideProps = {
   onSwipeDown: () => void;
   onOpenComments: () => void;
   onTimeUpdate: (currentTime: number, duration: number) => void;
-  onEnded: () => void;
+  onLoop: () => void;
+  onPlayingChange: (playing: boolean) => void;
 };
 
 export function VideoSlide(props: VideoSlideProps) {

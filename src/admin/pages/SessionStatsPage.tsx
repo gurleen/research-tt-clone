@@ -6,6 +6,7 @@ import {
 } from "../../shared/api/admin-schemas.ts";
 import { useAdminAuth } from "../auth/AdminAuthProvider.tsx";
 import { SessionEventTables } from "../components/SessionEventTables.tsx";
+import { SessionPlaylistCard } from "../components/SessionPlaylistCard.tsx";
 import { Alert } from "../../components/ui/alert.tsx";
 import { Badge } from "../../components/ui/badge.tsx";
 import { Button } from "../../components/ui/button.tsx";
@@ -137,6 +138,11 @@ export function SessionStatsPage() {
               </div>
             </CardContent>
           </Card>
+
+          <SessionPlaylistCard
+            playlist={summary.playlist}
+            currentPosition={summary.session.current_position}
+          />
 
           <SessionEventTables
             eventCounts={summary.event_counts}

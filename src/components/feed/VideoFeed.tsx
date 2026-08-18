@@ -6,10 +6,13 @@ import { VideoSlide } from "./VideoSlide";
 import { useIsTouchDevice } from "../../hooks/useIsTouchDevice";
 import { useLikes } from "../../hooks/useLikes";
 import { useVideoCompletion } from "../../hooks/useVideoCompletion";
+import { useVideoDwell } from "../../hooks/useVideoDwell.ts";
+import { shouldShowContinue } from "../../hooks/video-dwell.ts";
 import {
   useStudyPlaylist,
   useStudySession,
 } from "../../study/session-context.tsx";
+import { newEventId, nowIso, postEventBeacon } from "../../study/events.ts";
 import type { StudyFeedVideo } from "../../types/feed";
 
 export function VideoFeed() {
@@ -17,13 +20,7 @@ export function VideoFeed() {
   const { session, client, initialIndex, patchPosition, completePlaylist } =
     useStudySession();
   const { isLiked, toggleLike } = useLikes();
-  const {
-    currentIndex,
-    canGoForward,
-    handleTimeUpdate,
-    handleEnded,
-    goToIndex,
-  } = useVideoCompletion(initialIndex);
+  const { currentIndex, goToIndex } = useVideoCompletion(initialIndex);
 
   const isTouchDevice = useIsTouchDevice();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -34,20 +31,43 @@ export function VideoFeed() {
   const [progress, setProgress] = useState(0);
   const lastIndexRef = useRef(currentIndex);
   const completingRef = useRef(false);
+  const lastSlide = Math.max(videos.length - 1, 0);
+  const activeVideo = videos[currentIndex];
+  const { onTimeUpdate, onLoop, onPlayingChange, flush } = useVideoDwell({
+    sessionId: session?.session_id,
+    videoId: activeVideo?.video_id,
+  });
 
   const goNext = useCallback(() => {
-    goToIndex(currentIndex + 1);
-  }, [currentIndex, goToIndex]);
+    if (currentIndex < lastSlide) goToIndex(currentIndex + 1);
+  }, [currentIndex, goToIndex, lastSlide]);
 
   const goPrev = useCallback(() => {
     if (currentIndex > 0) goToIndex(currentIndex - 1);
   }, [currentIndex, goToIndex]);
 
+  const handleToggleLike = useCallback(
+    (videoId: string) => {
+      const liked = toggleLike(videoId);
+      if (!session) return;
+      postEventBeacon({
+        event_id: newEventId(),
+        session_id: session.session_id,
+        event: "like",
+        video_id: videoId,
+        liked,
+        timestamp: nowIso(),
+      });
+    },
+    [session, toggleLike],
+  );
+
   const handleDoubleTapLike = useCallback(
     (videoId: string) => {
-      if (!isLiked(videoId)) toggleLike(videoId);
+      if (isLiked(videoId)) return;
+      handleToggleLike(videoId);
     },
-    [isLiked, toggleLike],
+    [handleToggleLike, isLiked],
   );
 
   const scrollToIndex = useCallback((index: number) => {
@@ -64,9 +84,12 @@ export function VideoFeed() {
       scrollToIndex(currentIndex);
       lastIndexRef.current = currentIndex;
       setProgress(0);
-      void patchPosition(currentIndex);
+      const highWater = session?.current_position ?? 0;
+      if (currentIndex > highWater) {
+        void patchPosition(currentIndex);
+      }
     }
-  }, [currentIndex, scrollToIndex, patchPosition]);
+  }, [currentIndex, scrollToIndex, patchPosition, session?.current_position]);
 
   useEffect(() => {
     scrollToIndex(initialIndex);
@@ -79,30 +102,17 @@ export function VideoFeed() {
 
     const index = Math.round(container.scrollTop / container.clientHeight);
     if (index === currentIndex) return;
-
-    if (index > currentIndex && !canGoForward) {
-      scrollToIndex(currentIndex);
-      return;
-    }
+    if (index < 0 || index > lastSlide) return;
 
     goToIndex(index);
-  }, [currentIndex, canGoForward, goToIndex, scrollToIndex]);
+  }, [currentIndex, goToIndex, lastSlide]);
 
-  const onVideoEnded = useCallback(
-    (index: number) => {
-      handleEnded(index);
-
-      if (
-        index === videos.length - 1 &&
-        !completingRef.current &&
-        session
-      ) {
-        completingRef.current = true;
-        void completePlaylist();
-      }
-    },
-    [completePlaylist, handleEnded, session, videos.length],
-  );
+  const handleContinue = useCallback(() => {
+    if (completingRef.current || !session) return;
+    completingRef.current = true;
+    flush("playlist_complete");
+    void completePlaylist();
+  }, [completePlaylist, flush, session]);
 
   return (
     <>
@@ -121,23 +131,24 @@ export function VideoFeed() {
             <VideoSlide
               video={video}
               isActive={index === currentIndex}
-              liked={isLiked(video.id)}
+              liked={isLiked(video.video_id)}
               touchEnabled={isTouchDevice}
               sessionId={session?.session_id}
               client={client}
-              onToggleLike={() => toggleLike(video.id)}
-              onDoubleTapLike={() => handleDoubleTapLike(video.id)}
+              onToggleLike={() => handleToggleLike(video.video_id)}
+              onDoubleTapLike={() => handleDoubleTapLike(video.video_id)}
               onSwipeUp={goNext}
               onSwipeDown={goPrev}
               onOpenComments={() => setCommentsVideo(video)}
               onOpenLearnMore={() => setStubVideo(video)}
               onTimeUpdate={(current, duration) => {
-                handleTimeUpdate(index, current, duration);
                 if (index === currentIndex && duration > 0) {
                   setProgress(current / duration);
+                  onTimeUpdate(current, duration);
                 }
               }}
-              onEnded={() => onVideoEnded(index)}
+              onLoop={onLoop}
+              onPlayingChange={onPlayingChange}
             />
           </div>
         ))}
@@ -145,11 +156,15 @@ export function VideoFeed() {
 
       <VideoProgressBar progress={progress} />
 
-      {!canGoForward && currentIndex < videos.length - 1 && (
-        <div className="absolute above-bottom-nav-md inset-x-0 z-10 flex justify-center pointer-events-none">
-          <span className="rounded-full bg-black/50 px-3 py-1 text-xs text-white/80">
-            Watch the full video to continue
-          </span>
+      {shouldShowContinue(currentIndex, videos.length) && (
+        <div className="absolute above-bottom-nav inset-x-0 z-20 flex justify-center pb-3 pointer-events-none">
+          <button
+            type="button"
+            onClick={handleContinue}
+            className="pointer-events-auto rounded-full bg-white px-6 py-2 text-sm font-semibold text-black"
+          >
+            Continue
+          </button>
         </div>
       )}
 
@@ -157,6 +172,8 @@ export function VideoFeed() {
         <CommentsSheet
           comments={commentsVideo.comments}
           count={commentsVideo.commentCount}
+          sessionId={session?.session_id}
+          videoId={commentsVideo.video_id}
           onClose={() => setCommentsVideo(null)}
         />
       )}

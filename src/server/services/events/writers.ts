@@ -4,6 +4,7 @@ import {
   buildSurveyUrl,
   loadPlatformSettings,
 } from "../platform-settings/load-settings.ts";
+import { loadSession } from "../sessions/create-session.ts";
 import { enrichVideoEvent } from "./enrich-from-session.ts";
 import {
   idempotentInsert,
@@ -112,6 +113,72 @@ export async function writeInterestResponse(
   });
 }
 
+export async function writeVideoView(
+  body: Extract<EventBody, { event: "video_view" }>,
+): Promise<{ duplicate: boolean }> {
+  const { session, video } = await enrichVideoEvent(
+    body.session_id,
+    body.video_id,
+  );
+
+  return idempotentInsert("evt_video_view", {
+    event_id: body.event_id,
+    session_id: body.session_id,
+    video_id: body.video_id,
+    video_type: video.video_type,
+    source_type: session.source_type,
+    community: session.community,
+    visit_index: body.visit_index,
+    started_at: body.started_at,
+    ended_at: body.ended_at,
+    dwell_ms: body.dwell_ms,
+    playback_ms: body.playback_ms,
+    max_progress: body.max_progress,
+    loop_count: body.loop_count,
+    ended_reason: body.ended_reason,
+  });
+}
+
+export async function writeLike(
+  body: Extract<EventBody, { event: "like" }>,
+): Promise<{ duplicate: boolean }> {
+  const { session, video } = await enrichVideoEvent(
+    body.session_id,
+    body.video_id,
+  );
+
+  return idempotentInsert("evt_like", {
+    event_id: body.event_id,
+    session_id: body.session_id,
+    video_id: body.video_id,
+    video_type: video.video_type,
+    source_type: session.source_type,
+    community: session.community,
+    liked: body.liked,
+    timestamp: body.timestamp,
+  });
+}
+
+export async function writeCommentsOpen(
+  body: Extract<EventBody, { event: "comments_open" }>,
+): Promise<{ duplicate: boolean }> {
+  const { session, video } = await enrichVideoEvent(
+    body.session_id,
+    body.video_id,
+  );
+
+  return idempotentInsert("evt_comments_open", {
+    event_id: body.event_id,
+    session_id: body.session_id,
+    video_id: body.video_id,
+    video_type: video.video_type,
+    source_type: session.source_type,
+    community: session.community,
+    timestamp_open: body.timestamp_open,
+    time_on_sheet_ms: body.time_on_sheet_ms,
+  });
+}
+
 export async function writePlaylistComplete(
   body: Extract<EventBody, { event: "playlist_complete" }>,
   origin: string,
@@ -126,12 +193,18 @@ export async function writePlaylistComplete(
     await updateSessionStatus(body.session_id, "playlist_complete");
   }
 
-  const settings = await loadPlatformSettings();
+  const [settings, session] = await Promise.all([
+    loadPlatformSettings(),
+    loadSession(body.session_id),
+  ]);
 
   return {
     duplicate,
     route: "survey",
-    url: buildSurveyUrl(body.session_id, settings.surveyUrl),
+    url: buildSurveyUrl(body.session_id, settings.surveyUrl, {
+      externalId: session.external_id,
+      status: "playlist_complete",
+    }),
   };
 }
 

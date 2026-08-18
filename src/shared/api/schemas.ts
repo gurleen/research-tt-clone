@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { COMMUNITIES, EVENT_NAMES, SOURCE_TYPES } from "./events.ts";
+import {
+  COMMUNITIES,
+  EVENT_NAMES,
+  SOURCE_TYPES,
+  VIDEO_VIEW_ENDED_REASONS,
+} from "./events.ts";
 
 const uuid = z.uuid();
 const isoTimestamp = z.iso.datetime({ offset: true });
@@ -13,6 +18,19 @@ export const attributionSchema = z.object({
   profile_thumbnail_url: z.string(),
 });
 
+export const catalogCommentSchema = z.object({
+  username: z.string().min(1),
+  text: z.string().min(1),
+  timestamp: z.string().min(1).optional(),
+});
+
+export type CatalogComment = z.infer<typeof catalogCommentSchema>;
+
+export function parseCatalogComments(value: unknown): CatalogComment[] {
+  const parsed = catalogCommentSchema.array().safeParse(value);
+  return parsed.success ? parsed.data : [];
+}
+
 export const playlistItemSchema = z.object({
   position: z.number().int().nonnegative(),
   video_id: z.string(),
@@ -20,6 +38,13 @@ export const playlistItemSchema = z.object({
   media_url: z.string(),
   duration_ms: z.number().int().nullable(),
   attribution: attributionSchema,
+  caption: z.string(),
+  like_count: z.number().int().nonnegative(),
+  comment_count: z.number().int().nonnegative(),
+  follower_count: z.number().int().nonnegative(),
+  share_count: z.number().int().nonnegative(),
+  save_count: z.number().int().nonnegative(),
+  comments: z.array(catalogCommentSchema),
   show_learn_more: z.boolean(),
   show_interest_prompt: z.boolean(),
 });
@@ -37,9 +62,15 @@ export const sessionResponseSchema = z.object({
   playlist: z.array(playlistItemSchema),
 });
 
+export const externalIdSchema = z
+  .string()
+  .regex(/^R_[A-Za-z0-9]+$/, "external_id must be a Qualtrics ResponseID (R_ + alphanumerics)")
+  .max(64);
+
 export const createSessionBodySchema = z.object({
   community: communitySchema,
   source_type: sourceTypeSchema.optional(),
+  external_id: externalIdSchema.optional(),
 });
 
 export const patchPositionBodySchema = z.object({
@@ -116,6 +147,33 @@ export const interestResponseEventSchema = eventBaseSchema.extend({
   latency_ms: z.number().int().nonnegative(),
 });
 
+export const videoViewEventSchema = eventBaseSchema.extend({
+  event: z.literal("video_view"),
+  video_id: z.string(),
+  visit_index: z.number().int().min(1),
+  started_at: isoTimestamp,
+  ended_at: isoTimestamp,
+  dwell_ms: z.number().int().nonnegative(),
+  playback_ms: z.number().int().nonnegative(),
+  max_progress: z.number().nonnegative(),
+  loop_count: z.number().int().nonnegative(),
+  ended_reason: z.enum(VIDEO_VIEW_ENDED_REASONS),
+});
+
+export const likeEventSchema = eventBaseSchema.extend({
+  event: z.literal("like"),
+  video_id: z.string(),
+  liked: z.boolean(),
+  timestamp: isoTimestamp,
+});
+
+export const commentsOpenEventSchema = eventBaseSchema.extend({
+  event: z.literal("comments_open"),
+  video_id: z.string(),
+  timestamp_open: isoTimestamp,
+  time_on_sheet_ms: z.number().int().nonnegative(),
+});
+
 export const playlistCompleteEventSchema = eventBaseSchema.extend({
   event: z.literal("playlist_complete"),
   timestamp: isoTimestamp,
@@ -132,6 +190,9 @@ export const eventBodySchema = z.discriminatedUnion("event", [
   contentStubExitEventSchema,
   interestPromptDisplayEventSchema,
   interestResponseEventSchema,
+  videoViewEventSchema,
+  likeEventSchema,
+  commentsOpenEventSchema,
   playlistCompleteEventSchema,
   surveyCompleteEventSchema,
 ]).superRefine((value, ctx) => {
@@ -149,6 +210,17 @@ export const eventBodySchema = z.discriminatedUnion("event", [
     "response",
     "timestamp_response",
     "timestamp",
+    "visit_index",
+    "started_at",
+    "ended_at",
+    "dwell_ms",
+    "playback_ms",
+    "max_progress",
+    "loop_count",
+    "ended_reason",
+    "liked",
+    "timestamp_open",
+    "time_on_sheet_ms",
   ]);
   for (const key of allowedKeys) {
     if (!knownKeys.has(key)) {

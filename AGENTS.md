@@ -40,7 +40,7 @@ bun run configure:r2-cors
 
 Dev URL is printed by Bun (default `http://localhost:3000`).
 
-Participant entry: `/?community=sikh`  
+Participant entry: `/?community=sikh&external_id=R_…`  
 Admin: `/admin` (Supabase Auth; user `app_metadata.role` must be `"admin"`)
 
 ## Architecture
@@ -75,11 +75,11 @@ Env is read in `src/server/config/env.ts`. Copy `.env.example`.
 | Feed route `/` | `src/pages/FeedPage.tsx` |
 | Session bootstrap / restore | `src/study/session-context.tsx` |
 | Loading / error / complete gate | `src/components/study/StudySessionGate.tsx` |
-| Vertical snap feed + completion gate | `src/components/feed/VideoFeed.tsx` |
+| Vertical snap feed | `src/components/feed/VideoFeed.tsx` |
 | Per-slide chrome | `VideoSlide`, `VideoPlayer`, `VideoOverlay`, `VideoInfo`, `SideActions` |
-| Forward-only until 95% watched | `src/hooks/useVideoCompletion.ts` |
-| Likes (client-only) | `src/hooks/useLikes.ts` |
-| Comments sheet (UI chrome) | `src/components/comments/` |
+| Feed index (free bidirectional scroll) | `src/hooks/useVideoCompletion.ts` |
+| Likes (in-memory UI + `like` events) | `src/hooks/useLikes.ts` |
+| Comments sheet (catalog comments + `comments_open`) | `src/components/comments/` |
 | Phone frame + dummy top/bottom nav | `src/components/layout/` |
 | Playlist item → feed video | `src/study/map-playlist-item.ts` |
 | HTTP + sendBeacon helpers | `src/client/platform-api.ts`, `src/study/events.ts` |
@@ -139,7 +139,7 @@ Schema lives in `supabase/migrations/` (RLS + `platform_settings`; core experime
 
 Typed accessors: `src/server/db/tables.ts` (wraps generated `database.types.ts`). Server client uses the **secret** key (`src/server/db/client.ts`). Admin browser client uses the **publishable** key + RLS (`src/admin/lib/supabase-browser.ts`).
 
-Tables that matter: `videos`, `stub_content`, `experiment_config`, `sessions`, `session_videos`, `platform_settings`, plus `evt_*` event tables.
+Tables that matter: `videos` (including caption, comments JSONB, and social-stat counts), `stub_content`, `experiment_config`, `sessions`, `session_videos`, `platform_settings`, plus `evt_*` event tables.
 
 ### Shared contracts
 
@@ -155,7 +155,7 @@ All `/api/*` requests run through IP-header stripping first (`src/server/middlew
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/sessions` | Create session (optional `source_type` **only if `STAGING_MODE=true`**) |
+| `POST` | `/api/sessions` | Create or restore session. Optional `external_id` (Qualtrics `R_…` token). **Required unless `STAGING_MODE=true`**. Unique token restores `in_progress`; `409` if already used. Optional `source_type` **only if `STAGING_MODE=true`** |
 | `GET` | `/api/sessions/:id` | Restore same condition, playlist, `current_position` |
 | `PATCH` | `/api/sessions/:id/position` | Advance resume index (monotonic) |
 | `GET` | `/api/sessions/:id/videos/:videoId/stub` | Stub attribution + community body |
@@ -169,20 +169,20 @@ All `/api/*` requests run through IP-header stripping first (`src/server/middlew
 | `GET` | `/api/admin/sessions` | Admin session list (Bearer JWT) |
 | `GET` | `/api/admin/sessions/:id/summary` | Admin event summary |
 
-Event names: `content_link_display`, `content_link_click`, `content_stub_exit`, `interest_prompt_display`, `interest_response`, `playlist_complete`, `survey_complete`. Each needs a client-generated UUID `event_id`.
+Event names: `content_link_display`, `content_link_click`, `content_stub_exit`, `interest_prompt_display`, `interest_response`, `video_view`, `like`, `comments_open`, `playlist_complete`, `survey_complete`. Each needs a client-generated UUID `event_id`.
 
 ## Experiment integrity (do not break)
 
 These are enforced in the server/DB, not as frontend promises:
 
 1. **Condition is server-assigned and immutable.** Randomization in `POST /api/sessions`. DB trigger rejects updates to `source_type` / `community`. Refresh uses `GET /api/sessions/:id` — never re-roll.
-2. **No PII.** No IP, geo, or Cint IDs stored. Strip IP headers before handlers run.
+2. **No PII.** No IP, geo, or Cint IDs stored. Strip IP headers before handlers run. `sessions.external_id` is an anonymous Qualtrics join token only.
 3. **Client never sends condition fields** on events. Server copies `source_type`, `community`, `video_type` from session/video rows. Zod rejects extra keys (see `src/server/smoke.test.ts`).
 4. **Playlist is non-adaptive.** Order and prompt flags are written once to `session_videos`. Interest responses are logged and ignored by the composer.
 5. **Logging is idempotent.** `ON CONFLICT (event_id) DO NOTHING`.
 6. **Do not surface `source_type` as a label** in the participant UI. Condition is implied by which ingroup videos appear.
 7. **Stub body is constant per community**; only attribution (account name/handle/thumb) differs by video/condition.
-8. **Forward scroll** is gated until the current video completes; `PATCH /position` rejects moving backward.
+8. **Resume pointer is monotonic.** Participants can scroll freely; `PATCH /position` is a high-water mark and rejects moving backward. Rewind is client-only and must not PATCH a lower index. Refresh resumes at furthest reached.
 
 `STAGING_MODE=true` allows `source_type` on create so researchers can force an arm. That override must stay rejected in production.
 

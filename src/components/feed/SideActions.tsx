@@ -40,6 +40,7 @@ export function SideActions({
       <CreatorAvatar
         username={video.creator.username}
         avatarUrl={video.creator.avatarUrl}
+        followerCount={video.followerCount}
       />
       <LikeButton
         count={video.likeCount}

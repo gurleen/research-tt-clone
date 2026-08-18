@@ -26,6 +26,9 @@ export type EventTableName =
   | "evt_content_stub_exit"
   | "evt_interest_prompt_display"
   | "evt_interest_response"
+  | "evt_video_view"
+  | "evt_like"
+  | "evt_comments_open"
   | "evt_playlist_complete"
   | "evt_survey_complete";
 
