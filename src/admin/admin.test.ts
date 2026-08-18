@@ -48,6 +48,17 @@ describe("admin schemas", () => {
         assigned_at: "2026-06-08T12:00:00.000Z",
       },
       playlist_length: 10,
+      playlist: [
+        {
+          position: 0,
+          video_id: "ingroup_sikh_micro_01",
+          video_type: "ingroup",
+          account_name: "Creator",
+          account_handle: "@creator",
+          show_learn_more: true,
+          show_interest_prompt: false,
+        },
+      ],
       event_counts: {
         evt_session_start: 1,
         evt_content_link_display: 0,
@@ -77,6 +88,7 @@ describe("admin schemas", () => {
       },
     });
     expect(parsed.playlist_length).toBe(10);
+    expect(parsed.playlist[0]?.video_id).toBe("ingroup_sikh_micro_01");
   });
 
   test("adminSessionListResponseSchema parses session list payload", () => {
