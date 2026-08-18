@@ -12,6 +12,7 @@ import {
   useStudyPlaylist,
   useStudySession,
 } from "../../study/session-context.tsx";
+import { newEventId, nowIso, postEventBeacon } from "../../study/events.ts";
 import type { StudyFeedVideo } from "../../types/feed";
 
 export function VideoFeed() {
@@ -45,11 +46,28 @@ export function VideoFeed() {
     if (currentIndex > 0) goToIndex(currentIndex - 1);
   }, [currentIndex, goToIndex]);
 
+  const handleToggleLike = useCallback(
+    (videoId: string) => {
+      const liked = toggleLike(videoId);
+      if (!session) return;
+      postEventBeacon({
+        event_id: newEventId(),
+        session_id: session.session_id,
+        event: "like",
+        video_id: videoId,
+        liked,
+        timestamp: nowIso(),
+      });
+    },
+    [session, toggleLike],
+  );
+
   const handleDoubleTapLike = useCallback(
     (videoId: string) => {
-      if (!isLiked(videoId)) toggleLike(videoId);
+      if (isLiked(videoId)) return;
+      handleToggleLike(videoId);
     },
-    [isLiked, toggleLike],
+    [handleToggleLike, isLiked],
   );
 
   const scrollToIndex = useCallback((index: number) => {
@@ -113,12 +131,12 @@ export function VideoFeed() {
             <VideoSlide
               video={video}
               isActive={index === currentIndex}
-              liked={isLiked(video.id)}
+              liked={isLiked(video.video_id)}
               touchEnabled={isTouchDevice}
               sessionId={session?.session_id}
               client={client}
-              onToggleLike={() => toggleLike(video.id)}
-              onDoubleTapLike={() => handleDoubleTapLike(video.id)}
+              onToggleLike={() => handleToggleLike(video.video_id)}
+              onDoubleTapLike={() => handleDoubleTapLike(video.video_id)}
               onSwipeUp={goNext}
               onSwipeDown={goPrev}
               onOpenComments={() => setCommentsVideo(video)}

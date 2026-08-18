@@ -29,6 +29,7 @@ const EVENT_TABLE_ORDER = [
   "evt_interest_prompt_display",
   "evt_interest_response",
   "evt_video_view",
+  "evt_like",
   "evt_playlist_complete",
   "evt_survey_complete",
 ] as const;
@@ -161,6 +162,18 @@ const EVENT_TABLE_COLUMNS: Record<EventTableName, Column[]> = {
       header: "Ended",
       render: (row) => asString(row, "ended_reason"),
     },
+  ],
+  evt_like: [
+    ...VIDEO_COLUMNS,
+    {
+      header: "Action",
+      render: (row) => {
+        const value = row.liked;
+        if (typeof value !== "boolean") return "—";
+        return value ? "Like" : "Unlike";
+      },
+    },
+    TIMESTAMP_COLUMN,
   ],
   evt_playlist_complete: [TIMESTAMP_COLUMN],
   evt_survey_complete: [TIMESTAMP_COLUMN],

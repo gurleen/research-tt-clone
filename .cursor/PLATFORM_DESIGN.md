@@ -244,6 +244,19 @@ create table evt_video_view (
   server_received_at timestamptz not null default now()
 );
 
+-- One row per like/unlike toggle (behavioral DV, not a social graph).
+create table evt_like (
+  event_id           uuid primary key,
+  session_id         uuid not null references sessions(session_id),
+  video_id           text not null references videos(video_id),
+  video_type         video_type  not null,
+  source_type        source_type not null,
+  community          community   not null,
+  liked              boolean     not null,  -- true = like, false = unlike
+  "timestamp"        timestamptz not null,
+  server_received_at timestamptz not null default now()
+);
+
 -- One per session; unique constraint makes completion idempotent.
 create table evt_playlist_complete (
   event_id           uuid primary key,
@@ -265,6 +278,7 @@ create index on evt_content_stub_exit       (session_id);
 create index on evt_interest_prompt_display (session_id);
 create index on evt_interest_response       (session_id);
 create index on evt_video_view              (session_id);
+create index on evt_like                    (session_id);
 ```
 
 ## Deferred — Section 6 familiarity block (not built yet)
@@ -421,6 +435,7 @@ arm. The override is rejected in production.
 | Source handle non-functional | Frontend; API exposes attribution as data only, no URL |
 | Resume pointer monotonic (high-water) | `PATCH /position` rejects backward; client skips rewind PATCHes |
 | Per-visit dwell logged | `evt_video_view`; client sends timing only, server enriches condition |
+| Like/unlike logged | `evt_like`; client sends `liked` only, server enriches condition |
 | Playlist complete without `ended` | Continue on last slide → `playlist_complete` → survey URL redirect |
 | Identical badge across conditions | API returns identical badge config; only attribution differs |
 | Log click before navigation | `sendBeacon` on click + thin insert handler |
