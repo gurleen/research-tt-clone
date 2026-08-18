@@ -195,9 +195,20 @@ export const adminSessionListResponseSchema = z.object({
   total: z.number().int().nonnegative(),
 });
 
+export const adminSessionPlaylistItemSchema = z.object({
+  position: z.number().int().nonnegative(),
+  video_id: z.string(),
+  video_type: z.enum(["ingroup", "filler"]),
+  account_name: z.string(),
+  account_handle: z.string(),
+  show_learn_more: z.boolean(),
+  show_interest_prompt: z.boolean(),
+});
+
 export const adminSessionSummarySchema = z.object({
   session: adminSessionListItemSchema,
   playlist_length: z.number().int().nonnegative(),
+  playlist: z.array(adminSessionPlaylistItemSchema),
   event_counts: z.record(sessionEventTableSchema, z.number().int().nonnegative()),
   events: z.record(sessionEventTableSchema, z.array(z.record(z.string(), z.unknown()))),
 });
@@ -206,6 +217,9 @@ export type AdminSessionListItem = z.infer<typeof adminSessionListItemSchema>;
 export type AdminSessionListQuery = z.infer<typeof adminSessionListQuerySchema>;
 export type AdminSessionListResponse = z.infer<
   typeof adminSessionListResponseSchema
+>;
+export type AdminSessionPlaylistItem = z.infer<
+  typeof adminSessionPlaylistItemSchema
 >;
 export type AdminSessionSummary = z.infer<typeof adminSessionSummarySchema>;
 
