@@ -1,6 +1,6 @@
 import { db } from "../../db/client.ts";
-import { ApiError } from "../../lib/http.ts";
 import { loadSession } from "./create-session.ts";
+import { shouldAdvanceResumePosition } from "./resume-position.ts";
 
 export async function advancePosition(
   sessionId: string,
@@ -8,14 +8,7 @@ export async function advancePosition(
 ): Promise<number> {
   const session = await loadSession(sessionId);
 
-  if (position < session.current_position) {
-    throw new ApiError(
-      400,
-      `Position cannot move backward (current: ${session.current_position}, requested: ${position})`,
-    );
-  }
-
-  if (position === session.current_position) {
+  if (!shouldAdvanceResumePosition(session.current_position, position)) {
     return session.current_position;
   }
 

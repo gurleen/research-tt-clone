@@ -75,9 +75,9 @@ Env is read in `src/server/config/env.ts`. Copy `.env.example`.
 | Feed route `/` | `src/pages/FeedPage.tsx` |
 | Session bootstrap / restore | `src/study/session-context.tsx` |
 | Loading / error / complete gate | `src/components/study/StudySessionGate.tsx` |
-| Vertical snap feed + completion gate | `src/components/feed/VideoFeed.tsx` |
+| Vertical snap feed | `src/components/feed/VideoFeed.tsx` |
 | Per-slide chrome | `VideoSlide`, `VideoPlayer`, `VideoOverlay`, `VideoInfo`, `SideActions` |
-| Forward-only until 95% watched | `src/hooks/useVideoCompletion.ts` |
+| Feed index (free bidirectional scroll) | `src/hooks/useVideoCompletion.ts` |
 | Likes (client-only) | `src/hooks/useLikes.ts` |
 | Comments sheet (UI chrome) | `src/components/comments/` |
 | Phone frame + dummy top/bottom nav | `src/components/layout/` |
@@ -180,7 +180,7 @@ These are enforced in the server/DB, not as frontend promises:
 5. **Logging is idempotent.** `ON CONFLICT (event_id) DO NOTHING`.
 6. **Do not surface `source_type` as a label** in the participant UI. Condition is implied by which ingroup videos appear.
 7. **Stub body is constant per community**; only attribution (account name/handle/thumb) differs by video/condition.
-8. **Forward scroll** is gated until the current video completes; `PATCH /position` rejects moving backward.
+8. **Resume pointer is monotonic.** Participants can scroll freely; `PATCH /position` is a high-water mark and rejects moving backward. Rewind is client-only and must not PATCH a lower index. Refresh resumes at furthest reached.
 
 `STAGING_MODE=true` allows `source_type` on create so researchers can force an arm. That override must stay rejected in production.
 
