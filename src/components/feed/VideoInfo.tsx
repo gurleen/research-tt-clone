@@ -6,9 +6,15 @@ type VideoInfoProps = {
   video: StudyFeedVideo;
   sessionId?: string;
   client?: PlatformApiClient;
+  onOpenLearnMore?: () => void;
 };
 
-export function VideoInfo({ video, sessionId, client }: VideoInfoProps) {
+export function VideoInfo({
+  video,
+  sessionId,
+  client,
+  onOpenLearnMore,
+}: VideoInfoProps) {
   const tags = video.hashtags ?? [];
 
   return (
@@ -26,11 +32,12 @@ export function VideoInfo({ video, sessionId, client }: VideoInfoProps) {
           ))}
         </p>
       )}
-      {video.show_learn_more && sessionId && client && (
+      {video.show_learn_more && sessionId && client && onOpenLearnMore && (
         <LearnMoreLink
           sessionId={sessionId}
           videoId={video.video_id}
           client={client}
+          onOpen={onOpenLearnMore}
         />
       )}
       <p className="mt-2 flex items-center gap-1 truncate text-xs opacity-90 drop-shadow">

@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
 import type { PlatformApiClient } from "../../client/platform-api.ts";
 import { newEventId, nowIso, postEventBeacon } from "../../study/events.ts";
 
@@ -7,14 +6,15 @@ type LearnMoreLinkProps = {
   sessionId: string;
   videoId: string;
   client: PlatformApiClient;
+  onOpen: () => void;
 };
 
 export function LearnMoreLink({
   sessionId,
   videoId,
   client,
+  onOpen,
 }: LearnMoreLinkProps) {
-  const navigate = useNavigate();
   const displayLogged = useRef(false);
 
   useEffect(() => {
@@ -41,11 +41,7 @@ export function LearnMoreLink({
       latency_ms: Math.round(performance.now() - clickStarted),
     });
 
-    const params = new URLSearchParams({
-      session_id: sessionId,
-      video_id: videoId,
-    });
-    navigate(`/stub?${params.toString()}`);
+    onOpen();
   }
 
   return (

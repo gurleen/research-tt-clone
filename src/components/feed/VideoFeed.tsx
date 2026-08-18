@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CommentsSheet } from "../comments/CommentsSheet";
+import { StubSheet } from "../study/StubSheet.tsx";
 import { VideoProgressBar } from "./VideoProgressBar";
 import { VideoSlide } from "./VideoSlide";
 import { useIsTouchDevice } from "../../hooks/useIsTouchDevice";
@@ -29,6 +30,7 @@ export function VideoFeed() {
   const [commentsVideo, setCommentsVideo] = useState<StudyFeedVideo | null>(
     null,
   );
+  const [stubVideo, setStubVideo] = useState<StudyFeedVideo | null>(null);
   const [progress, setProgress] = useState(0);
   const lastIndexRef = useRef(currentIndex);
   const completingRef = useRef(false);
@@ -128,6 +130,7 @@ export function VideoFeed() {
               onSwipeUp={goNext}
               onSwipeDown={goPrev}
               onOpenComments={() => setCommentsVideo(video)}
+              onOpenLearnMore={() => setStubVideo(video)}
               onTimeUpdate={(current, duration) => {
                 handleTimeUpdate(index, current, duration);
                 if (index === currentIndex && duration > 0) {
@@ -155,6 +158,15 @@ export function VideoFeed() {
           comments={commentsVideo.comments}
           count={commentsVideo.commentCount}
           onClose={() => setCommentsVideo(null)}
+        />
+      )}
+
+      {stubVideo && session && client && (
+        <StubSheet
+          sessionId={session.session_id}
+          videoId={stubVideo.video_id}
+          client={client}
+          onClose={() => setStubVideo(null)}
         />
       )}
     </>

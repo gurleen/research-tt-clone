@@ -3,7 +3,10 @@ import { ApiError } from "../../lib/http.ts";
 import { randomIntInclusive, sampleWithoutReplacement } from "../../lib/random.ts";
 import type { Community, SessionVideoInsert, SourceType } from "../../db/tables.ts";
 import { placePrompts } from "./place-prompts.ts";
-import { shuffleIngroupIntoFiller } from "./shuffle-ingroup-filler.ts";
+import {
+  minFillerCountForIngroupSpacing,
+  shuffleIngroupIntoFiller,
+} from "./shuffle-ingroup-filler.ts";
 
 export type PlaylistSlot = {
   video_id: string;
@@ -34,10 +37,18 @@ export async function composePlaylistSlots(
     config.ingroup_count_min,
     config.ingroup_count_max,
   );
-  const fillerCount = randomIntInclusive(
-    config.filler_count_min,
-    config.filler_count_max,
+  const minFillerForSpacing = minFillerCountForIngroupSpacing(ingroupCount);
+  const fillerCount = Math.max(
+    randomIntInclusive(config.filler_count_min, config.filler_count_max),
+    minFillerForSpacing,
   );
+
+  if (fillerCount > config.filler_count_max) {
+    throw new ApiError(
+      503,
+      `Experiment config cannot satisfy ingroup spacing: need at least ${minFillerForSpacing} filler videos for ${ingroupCount} ingroup, but filler_count_max is ${config.filler_count_max}`,
+    );
+  }
 
   const { data: ingroupPool, error: ingroupError } = await db
     .from("videos")

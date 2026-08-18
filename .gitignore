@@ -27,6 +27,9 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .cache
 *.tsbuildinfo
 
+# CodeGraph local index
+.codegraph
+
 # IntelliJ based IDEs
 .idea
 

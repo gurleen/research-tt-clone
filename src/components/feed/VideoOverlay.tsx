@@ -15,6 +15,7 @@ type VideoOverlayProps = {
   touchEnabled: boolean;
   sessionId?: string;
   client?: PlatformApiClient;
+  onOpenLearnMore?: () => void;
   onToggleLike: () => void;
   onDoubleTapLike: () => void;
   onOpenComments: () => void;
@@ -31,6 +32,7 @@ export function VideoOverlay({
   touchEnabled,
   sessionId,
   client,
+  onOpenLearnMore,
   onToggleLike,
   onDoubleTapLike,
   onOpenComments,
@@ -86,7 +88,12 @@ export function VideoOverlay({
         onToggleLike={onToggleLike}
         onOpenComments={onOpenComments}
       />
-      <VideoInfo video={video} sessionId={sessionId} client={client} />
+      <VideoInfo
+        video={video}
+        sessionId={sessionId}
+        client={client}
+        onOpenLearnMore={onOpenLearnMore}
+      />
       <div className="absolute above-bottom-nav-sm right-3 z-10 pointer-events-none">
         <MusicDisc />
       </div>
