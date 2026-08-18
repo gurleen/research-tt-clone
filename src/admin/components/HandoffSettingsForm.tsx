@@ -133,8 +133,10 @@ export function HandoffSettingsForm({ rows, onSaved }: HandoffSettingsFormProps)
               placeholder="https://survey.example.com?session_id={session_id}"
             />
             <p className="text-xs text-zinc-500">
-              Must include the {"{session_id}"} placeholder, which is replaced
-              when the participant finishes the playlist.
+              Must include {"{session_id}"}. Optional {"{external_id}"} and{" "}
+              {"{status}"} are replaced on playlist complete. If those
+              placeholders are omitted, they are appended as query params. Never
+              include source_type.
             </p>
           </div>
 

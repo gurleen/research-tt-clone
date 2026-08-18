@@ -40,7 +40,7 @@ bun run configure:r2-cors
 
 Dev URL is printed by Bun (default `http://localhost:3000`).
 
-Participant entry: `/?community=sikh`  
+Participant entry: `/?community=sikh&external_id=R_…`  
 Admin: `/admin` (Supabase Auth; user `app_metadata.role` must be `"admin"`)
 
 ## Architecture
@@ -155,7 +155,7 @@ All `/api/*` requests run through IP-header stripping first (`src/server/middlew
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/sessions` | Create session (optional `source_type` **only if `STAGING_MODE=true`**) |
+| `POST` | `/api/sessions` | Create or restore session. Optional `external_id` (Qualtrics `R_…` token). **Required unless `STAGING_MODE=true`**. Unique token restores `in_progress`; `409` if already used. Optional `source_type` **only if `STAGING_MODE=true`** |
 | `GET` | `/api/sessions/:id` | Restore same condition, playlist, `current_position` |
 | `PATCH` | `/api/sessions/:id/position` | Advance resume index (monotonic) |
 | `GET` | `/api/sessions/:id/videos/:videoId/stub` | Stub attribution + community body |
@@ -176,7 +176,7 @@ Event names: `content_link_display`, `content_link_click`, `content_stub_exit`, 
 These are enforced in the server/DB, not as frontend promises:
 
 1. **Condition is server-assigned and immutable.** Randomization in `POST /api/sessions`. DB trigger rejects updates to `source_type` / `community`. Refresh uses `GET /api/sessions/:id` — never re-roll.
-2. **No PII.** No IP, geo, or Cint IDs stored. Strip IP headers before handlers run.
+2. **No PII.** No IP, geo, or Cint IDs stored. Strip IP headers before handlers run. `sessions.external_id` is an anonymous Qualtrics join token only.
 3. **Client never sends condition fields** on events. Server copies `source_type`, `community`, `video_type` from session/video rows. Zod rejects extra keys (see `src/server/smoke.test.ts`).
 4. **Playlist is non-adaptive.** Order and prompt flags are written once to `session_videos`. Interest responses are logged and ignored by the composer.
 5. **Logging is idempotent.** `ON CONFLICT (event_id) DO NOTHING`.

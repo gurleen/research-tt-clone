@@ -590,6 +590,7 @@ export type Database = {
           community: Database["public"]["Enums"]["community"];
           created_at: string;
           current_position: number;
+          external_id: string | null;
           session_id: string;
           source_type: Database["public"]["Enums"]["source_type"];
           status: string;
@@ -599,6 +600,7 @@ export type Database = {
           community: Database["public"]["Enums"]["community"];
           created_at?: string;
           current_position?: number;
+          external_id?: string | null;
           session_id?: string;
           source_type: Database["public"]["Enums"]["source_type"];
           status?: string;
@@ -608,6 +610,7 @@ export type Database = {
           community?: Database["public"]["Enums"]["community"];
           created_at?: string;
           current_position?: number;
+          external_id?: string | null;
           session_id?: string;
           source_type?: Database["public"]["Enums"]["source_type"];
           status?: string;

@@ -15,7 +15,18 @@ export async function handleCreateSession(req: Request): Promise<Response> {
     );
   }
 
-  const session = await createSession(body.community, body.source_type);
+  if (!env.stagingMode && !body.external_id) {
+    throw new ApiError(
+      400,
+      "Missing study link token. Open the study from your survey.",
+    );
+  }
+
+  const { session, created } = await createSession(
+    body.community,
+    body.source_type,
+    body.external_id,
+  );
   const response = await buildSessionResponse(session);
-  return json(response, 201);
+  return json(response, created ? 201 : 200);
 }
