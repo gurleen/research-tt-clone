@@ -30,6 +30,7 @@ const EVENT_TABLE_ORDER = [
   "evt_interest_response",
   "evt_video_view",
   "evt_like",
+  "evt_comments_open",
   "evt_playlist_complete",
   "evt_survey_complete",
 ] as const;
@@ -174,6 +175,17 @@ const EVENT_TABLE_COLUMNS: Record<EventTableName, Column[]> = {
       },
     },
     TIMESTAMP_COLUMN,
+  ],
+  evt_comments_open: [
+    ...VIDEO_COLUMNS,
+    {
+      header: "Opened",
+      render: (row) => formatTimeCell(row, "timestamp_open"),
+    },
+    {
+      header: "Time on sheet",
+      render: (row) => formatDurationCell(row, "time_on_sheet_ms"),
+    },
   ],
   evt_playlist_complete: [TIMESTAMP_COLUMN],
   evt_survey_complete: [TIMESTAMP_COLUMN],

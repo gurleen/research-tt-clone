@@ -62,6 +62,15 @@ create table videos (
   account_handle        text not null,
   profile_thumbnail_url text not null,
 
+  -- feed chrome (researcher-authored; like_count is a display baseline)
+  caption         text not null default '',
+  like_count      integer not null default 0,
+  comment_count   integer not null default 0,
+  follower_count  integer not null default 0,
+  share_count     integer not null default 0,
+  save_count      integer not null default 0,
+  comments        jsonb not null default '[]',  -- [{ username, text, timestamp? }]
+
   central_issue text,                       -- metadata for ingroup videos
   created_at    timestamptz not null default now(),
 
@@ -257,6 +266,19 @@ create table evt_like (
   server_received_at timestamptz not null default now()
 );
 
+-- One row per comments-sheet open; written on close with time on sheet.
+create table evt_comments_open (
+  event_id           uuid primary key,
+  session_id         uuid not null references sessions(session_id),
+  video_id           text not null references videos(video_id),
+  video_type         video_type  not null,
+  source_type        source_type not null,
+  community          community   not null,
+  timestamp_open     timestamptz not null,
+  time_on_sheet_ms   integer     not null,
+  server_received_at timestamptz not null default now()
+);
+
 -- One per session; unique constraint makes completion idempotent.
 create table evt_playlist_complete (
   event_id           uuid primary key,
@@ -279,6 +301,7 @@ create index on evt_interest_prompt_display (session_id);
 create index on evt_interest_response       (session_id);
 create index on evt_video_view              (session_id);
 create index on evt_like                    (session_id);
+create index on evt_comments_open           (session_id);
 ```
 
 ## Deferred — Section 6 familiarity block (not built yet)
@@ -436,6 +459,7 @@ arm. The override is rejected in production.
 | Resume pointer monotonic (high-water) | `PATCH /position` rejects backward; client skips rewind PATCHes |
 | Per-visit dwell logged | `evt_video_view`; client sends timing only, server enriches condition |
 | Like/unlike logged | `evt_like`; client sends `liked` only, server enriches condition |
+| Comments sheet open logged | `evt_comments_open`; client sends open time + `time_on_sheet_ms`, server enriches condition |
 | Playlist complete without `ended` | Continue on last slide → `playlist_complete` → survey URL redirect |
 | Identical badge across conditions | API returns identical badge config; only attribution differs |
 | Log click before navigation | `sendBeacon` on click + thin insert handler |

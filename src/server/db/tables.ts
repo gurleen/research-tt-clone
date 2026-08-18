@@ -28,6 +28,7 @@ export type EventTableName =
   | "evt_interest_response"
   | "evt_video_view"
   | "evt_like"
+  | "evt_comments_open"
   | "evt_playlist_complete"
   | "evt_survey_complete";
 

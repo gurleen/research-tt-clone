@@ -3,6 +3,7 @@ import { CommentList } from "./CommentList";
 import { Z } from "../../utils/layout";
 import type { FeedComment } from "../../types/feed";
 import { formatCount } from "../../utils/formatCount";
+import { newEventId, nowIso, postEventBeacon } from "../../study/events.ts";
 
 const ANIMATION_MS = 300;
 
@@ -10,27 +11,62 @@ type CommentsSheetProps = {
   comments: FeedComment[];
   count: number;
   onClose: () => void;
+  sessionId?: string;
+  videoId?: string;
 };
 
-export function CommentsSheet({ comments, count, onClose }: CommentsSheetProps) {
+export function CommentsSheet({
+  comments,
+  count,
+  onClose,
+  sessionId,
+  videoId,
+}: CommentsSheetProps) {
   const [visible, setVisible] = useState(false);
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+  const openedAtMs = useRef(performance.now());
+  const timestampOpen = useRef(nowIso());
+  const logged = useRef(false);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(frame);
   }, []);
 
+  const logOpen = useCallback(() => {
+    if (logged.current) return;
+    if (!sessionId || !videoId) return;
+    logged.current = true;
+    postEventBeacon({
+      event_id: newEventId(),
+      session_id: sessionId,
+      event: "comments_open",
+      video_id: videoId,
+      timestamp_open: timestampOpen.current,
+      time_on_sheet_ms: Math.max(
+        0,
+        Math.round(performance.now() - openedAtMs.current),
+      ),
+    });
+  }, [sessionId, videoId]);
+
   useEffect(() => {
+    const onPageHide = () => logOpen();
+    window.addEventListener("pagehide", onPageHide);
     return () => {
+      window.removeEventListener("pagehide", onPageHide);
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+      logOpen();
     };
-  }, []);
+  }, [logOpen]);
 
   const handleClose = useCallback(() => {
+    logOpen();
     setVisible(false);
     closeTimerRef.current = setTimeout(onClose, ANIMATION_MS);
-  }, [onClose]);
+  }, [logOpen, onClose]);
 
   return (
     <div

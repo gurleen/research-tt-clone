@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { catalogCommentSchema } from "./schemas.ts";
 
 export const presignUploadBodySchema = z.object({
   video_id: z
@@ -41,6 +42,13 @@ export const videoFormSchema = z
     account_handle: z.string().min(1),
     duration_ms: z.number().int().positive().nullable().optional(),
     central_issue: z.string().nullable().optional(),
+    caption: z.string().default(""),
+    like_count: z.number().int().nonnegative().default(0),
+    comment_count: z.number().int().nonnegative().default(0),
+    follower_count: z.number().int().nonnegative().default(0),
+    share_count: z.number().int().nonnegative().default(0),
+    save_count: z.number().int().nonnegative().default(0),
+    comments: z.array(catalogCommentSchema).default([]),
   })
   .superRefine((value, ctx) => {
     if (value.video_type === "ingroup") {
@@ -161,6 +169,7 @@ const sessionEventTableSchema = z.enum([
   "evt_interest_response",
   "evt_video_view",
   "evt_like",
+  "evt_comments_open",
   "evt_playlist_complete",
   "evt_survey_complete",
 ]);
