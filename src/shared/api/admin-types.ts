@@ -1,5 +1,8 @@
 export type {
   AdminConfigResponse,
+  AdminSessionListItem,
+  AdminSessionListQuery,
+  AdminSessionListResponse,
   AdminSessionSummary,
   DeactivateVideoResponse,
   ExperimentConfigFormValues,
@@ -13,6 +16,9 @@ export type {
 
 export {
   adminConfigResponseSchema,
+  adminSessionListItemSchema,
+  adminSessionListQuerySchema,
+  adminSessionListResponseSchema,
   adminSessionSummarySchema,
   communitySchema,
   deactivateVideoResponseSchema,
@@ -22,6 +28,8 @@ export {
   presignUploadBodySchema,
   presignUploadResponseSchema,
   reactivateVideoResponseSchema,
+  SESSION_STATUSES,
+  sessionStatusSchema,
   stubContentFormSchema,
   videoFormSchema,
 } from "./admin-schemas.ts";

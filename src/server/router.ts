@@ -10,6 +10,7 @@ import { handleGetDebrief } from "./routes/debrief/get.ts";
 import { handleExport } from "./routes/export/get.ts";
 import { handleAdminConfig } from "./routes/admin/config.ts";
 import { handlePresignUpload } from "./routes/admin/uploads/presign.ts";
+import { handleAdminSessionList } from "./routes/admin/sessions/list.ts";
 import { handleAdminSessionSummary } from "./routes/admin/sessions/summary.ts";
 import { handleDeactivateVideo } from "./routes/admin/videos/deactivate.ts";
 import { handleReactivateVideo } from "./routes/admin/videos/reactivate.ts";
@@ -66,6 +67,10 @@ async function routeRequest(req: Request): Promise<Response> {
       return handleDeactivateVideo(req, videoId);
     }
     return handleReactivateVideo(req, videoId);
+  }
+
+  if (method === "GET" && pathname === "/api/admin/sessions") {
+    return handleAdminSessionList(req);
   }
 
   const adminSessionMatch = pathname.match(
