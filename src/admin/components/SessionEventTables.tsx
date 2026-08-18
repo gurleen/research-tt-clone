@@ -28,6 +28,7 @@ const EVENT_TABLE_ORDER = [
   "evt_content_stub_exit",
   "evt_interest_prompt_display",
   "evt_interest_response",
+  "evt_video_view",
   "evt_playlist_complete",
   "evt_survey_complete",
 ] as const;
@@ -136,6 +137,29 @@ const EVENT_TABLE_COLUMNS: Record<EventTableName, Column[]> = {
     {
       header: "Latency",
       render: (row) => formatDurationCell(row, "latency_ms"),
+    },
+  ],
+  evt_video_view: [
+    ...VIDEO_COLUMNS,
+    {
+      header: "Visit",
+      render: (row) => asString(row, "visit_index"),
+    },
+    {
+      header: "Started",
+      render: (row) => formatTimeCell(row, "started_at"),
+    },
+    {
+      header: "Dwell",
+      render: (row) => formatDurationCell(row, "dwell_ms"),
+    },
+    {
+      header: "Playback",
+      render: (row) => formatDurationCell(row, "playback_ms"),
+    },
+    {
+      header: "Ended",
+      render: (row) => asString(row, "ended_reason"),
     },
   ],
   evt_playlist_complete: [TIMESTAMP_COLUMN],

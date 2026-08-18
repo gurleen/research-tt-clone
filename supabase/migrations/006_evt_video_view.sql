@@ -24,3 +24,5 @@ create table evt_video_view (
 create index evt_video_view_session_id_idx on evt_video_view (session_id);
 
 alter table evt_video_view enable row level security;
+
+grant select, insert, update, delete on table evt_video_view to service_role;
