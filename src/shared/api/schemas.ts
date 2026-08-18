@@ -42,9 +42,15 @@ export const sessionResponseSchema = z.object({
   playlist: z.array(playlistItemSchema),
 });
 
+export const externalIdSchema = z
+  .string()
+  .regex(/^R_[A-Za-z0-9]+$/, "external_id must be a Qualtrics ResponseID (R_ + alphanumerics)")
+  .max(64);
+
 export const createSessionBodySchema = z.object({
   community: communitySchema,
   source_type: sourceTypeSchema.optional(),
+  external_id: externalIdSchema.optional(),
 });
 
 export const patchPositionBodySchema = z.object({

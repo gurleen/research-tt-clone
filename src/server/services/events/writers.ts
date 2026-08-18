@@ -4,6 +4,7 @@ import {
   buildSurveyUrl,
   loadPlatformSettings,
 } from "../platform-settings/load-settings.ts";
+import { loadSession } from "../sessions/create-session.ts";
 import { enrichVideoEvent } from "./enrich-from-session.ts";
 import {
   idempotentInsert,
@@ -152,12 +153,18 @@ export async function writePlaylistComplete(
     await updateSessionStatus(body.session_id, "playlist_complete");
   }
 
-  const settings = await loadPlatformSettings();
+  const [settings, session] = await Promise.all([
+    loadPlatformSettings(),
+    loadSession(body.session_id),
+  ]);
 
   return {
     duplicate,
     route: "survey",
-    url: buildSurveyUrl(body.session_id, settings.surveyUrl),
+    url: buildSurveyUrl(body.session_id, settings.surveyUrl, {
+      externalId: session.external_id,
+      status: "playlist_complete",
+    }),
   };
 }
 

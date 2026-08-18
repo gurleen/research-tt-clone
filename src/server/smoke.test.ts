@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { communitySchema, eventBodySchema } from "../shared/api/schemas.ts";
+import { communitySchema, createSessionBodySchema, eventBodySchema } from "../shared/api/schemas.ts";
 
 describe("shared API schemas", () => {
   test("communitySchema accepts valid communities", () => {
@@ -62,6 +62,34 @@ describe("shared API schemas", () => {
       source_type: "institutional",
     });
     expect(parsed.success).toBe(false);
+  });
+
+  test("createSessionBodySchema accepts Qualtrics external_id", () => {
+    const parsed = createSessionBodySchema.parse({
+      community: "sikh",
+      external_id: "R_abc123XYZ",
+    });
+    expect(parsed.external_id).toBe("R_abc123XYZ");
+  });
+
+  test("createSessionBodySchema allows omitting external_id", () => {
+    const parsed = createSessionBodySchema.parse({ community: "sikh" });
+    expect(parsed.external_id).toBeUndefined();
+  });
+
+  test("createSessionBodySchema rejects non-Qualtrics external_id", () => {
+    expect(
+      createSessionBodySchema.safeParse({
+        community: "sikh",
+        external_id: "cint_123",
+      }).success,
+    ).toBe(false);
+    expect(
+      createSessionBodySchema.safeParse({
+        community: "sikh",
+        external_id: "R_abc-def",
+      }).success,
+    ).toBe(false);
   });
 });
 

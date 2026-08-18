@@ -43,6 +43,43 @@ export async function loadPlatformSettings(): Promise<PlatformSettings> {
   return mapRowsToSettings(data ?? []);
 }
 
-export function buildSurveyUrl(sessionId: string, template: string): string {
-  return template.replace("{session_id}", sessionId);
+export type SurveyUrlFields = {
+  externalId?: string | null;
+  status?: string;
+};
+
+export function buildSurveyUrl(
+  sessionId: string,
+  template: string,
+  fields: SurveyUrlFields = {},
+): string {
+  const externalId = fields.externalId ?? "";
+  const status = fields.status ?? "";
+
+  let url = template
+    .replaceAll("{session_id}", sessionId)
+    .replaceAll("{external_id}", externalId)
+    .replaceAll("{status}", status);
+
+  const shouldAppendExternalId =
+    Boolean(fields.externalId) && !template.includes("{external_id}");
+  const shouldAppendStatus =
+    Boolean(fields.status) && !template.includes("{status}");
+
+  if (!shouldAppendExternalId && !shouldAppendStatus) {
+    return url;
+  }
+
+  try {
+    const parsed = new URL(url);
+    if (shouldAppendExternalId && fields.externalId) {
+      parsed.searchParams.set("external_id", fields.externalId);
+    }
+    if (shouldAppendStatus && fields.status) {
+      parsed.searchParams.set("status", fields.status);
+    }
+    return parsed.toString();
+  } catch {
+    return url;
+  }
 }

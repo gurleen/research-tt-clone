@@ -13,6 +13,7 @@ import { ApiError } from "../client/errors.ts";
 import type { PlatformApiClient } from "../client/platform-api.ts";
 import type {
   Community,
+  CreateSessionBody,
   SessionResponse,
   SourceType,
 } from "../shared/api/types.ts";
@@ -55,6 +56,9 @@ function isSourceType(value: string | null): value is SourceType {
 
 function catalogErrorMessage(error: unknown, community?: string): string {
   if (error instanceof ApiError) {
+    if (error.status === 409) {
+      return "This link has already been used.";
+    }
     if (
       error.status === 503 ||
       error.message.toLowerCase().includes("not enough")
@@ -82,30 +86,53 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
   const urlCommunity = searchParams.get("community");
   const urlSessionId = searchParams.get("session_id");
   const urlSourceType = searchParams.get("source_type");
+  const urlExternalId =
+    searchParams.get("external_id") ?? searchParams.get("ResponseID");
 
   useEffect(() => {
     let cancelled = false;
+
+    async function applySession(next: SessionResponse) {
+      sessionStorage.setItem(STORAGE_KEY, next.session_id);
+      setSession(next);
+      setState(next.status === "playlist_complete" ? "complete" : "ready");
+    }
 
     async function bootstrap() {
       setState("loading");
       setError(null);
 
       try {
+        if (urlExternalId) {
+          if (!isCommunity(urlCommunity)) {
+            setError(
+              "Missing community. Open the study link with ?community=armenian, sikh, or iranian.",
+            );
+            setState("error");
+            return;
+          }
+
+          const body: CreateSessionBody = {
+            community: urlCommunity,
+            external_id: urlExternalId,
+          };
+          if (isSourceType(urlSourceType)) {
+            body.source_type = urlSourceType;
+          }
+
+          const created = await client.createSession(body);
+          if (cancelled) return;
+          await applySession(created);
+          return;
+        }
+
         const storedSessionId = sessionStorage.getItem(STORAGE_KEY);
         const sessionId = urlSessionId ?? storedSessionId;
 
         if (sessionId) {
           const restored = await client.getSession(sessionId);
           if (cancelled) return;
-
-          sessionStorage.setItem(STORAGE_KEY, restored.session_id);
-          setSession(restored);
-
-          if (restored.status === "playlist_complete") {
-            setState("complete");
-          } else {
-            setState("ready");
-          }
+          await applySession(restored);
           return;
         }
 
@@ -117,7 +144,7 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const body: { community: Community; source_type?: SourceType } = {
+        const body: CreateSessionBody = {
           community: urlCommunity,
         };
         if (isSourceType(urlSourceType)) {
@@ -126,10 +153,7 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
 
         const created = await client.createSession(body);
         if (cancelled) return;
-
-        sessionStorage.setItem(STORAGE_KEY, created.session_id);
-        setSession(created);
-        setState("ready");
+        await applySession(created);
       } catch (err) {
         if (cancelled) return;
         setError(catalogErrorMessage(err, urlCommunity ?? undefined));
@@ -142,7 +166,7 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [client, urlCommunity, urlSessionId, urlSourceType]);
+  }, [client, urlCommunity, urlExternalId, urlSessionId, urlSourceType]);
 
   const videos = useMemo(
     () => (session ? mapPlaylist(session.playlist) : []),
