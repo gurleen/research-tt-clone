@@ -10,6 +10,7 @@ import { StubContentPage } from "./admin/pages/StubContentPage.tsx";
 import { ExperimentConfigPage } from "./admin/pages/ExperimentConfigPage.tsx";
 import { HandoffSettingsPage } from "./admin/pages/HandoffSettingsPage.tsx";
 import { TestSessionPage } from "./admin/pages/TestSessionPage.tsx";
+import { SessionsPage } from "./admin/pages/SessionsPage.tsx";
 import { SessionStatsPage } from "./admin/pages/SessionStatsPage.tsx";
 import { StubPage } from "./pages/StubPage.tsx";
 import { FeedPage } from "./pages/FeedPage";
@@ -39,6 +40,7 @@ export function App() {
             <Route path="experiment-config" element={<ExperimentConfigPage />} />
             <Route path="handoff-settings" element={<HandoffSettingsPage />} />
             <Route path="test-session" element={<TestSessionPage />} />
+            <Route path="sessions" element={<SessionsPage />} />
             <Route path="sessions/:sessionId" element={<SessionStatsPage />} />
           </Route>
         </Routes>

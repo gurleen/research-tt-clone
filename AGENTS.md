@@ -62,7 +62,7 @@ Layers:
 - **Shared API** (`src/shared/api/`) — Zod schemas + types used by server *and* client.
 - **Client** (`src/client/`) — `PlatformApiClient` for participant/admin HTTP.
 - **Study UI** (`src/study/`, `src/components/study/`, `src/pages/`) — session bootstrap and feed instrumentation.
-- **Admin UI** (`src/admin/`) — researcher CRUD; most writes go through the **browser Supabase client + RLS**. Bun routes are only for secrets (R2 presign, deactivate/reactivate + object delete, export, session summary).
+- **Admin UI** (`src/admin/`) — researcher CRUD; most writes go through the **browser Supabase client + RLS**. Bun routes are only for secrets (R2 presign, deactivate/reactivate + object delete, export, session list/summary).
 
 Env is read in `src/server/config/env.ts`. Copy `.env.example`.
 
@@ -126,7 +126,8 @@ Ingroup videos get `show_learn_more`. Fillers may get `show_interest_prompt`. Pr
 | Playlist counts / prompt rules | `/admin/experiment-config` | `ExperimentConfigPage.tsx` |
 | Survey URL + debrief | `/admin/handoff-settings` | `HandoffSettingsPage.tsx` |
 | Forced walkthrough | `/admin/test-session` | `TestSessionPage.tsx` |
-| Per-session event dump | `/admin/sessions/:sessionId` | `SessionStatsPage.tsx` |
+| Session list | `/admin/sessions` | `SessionsPage.tsx` |
+| Per-session events | `/admin/sessions/:sessionId` | `SessionStatsPage.tsx` |
 
 Auth: `src/admin/auth/`. Nav: `src/admin/nav.ts`. Admin flag: `src/shared/auth/admin.ts`.
 
@@ -165,6 +166,7 @@ All `/api/*` requests run through IP-header stripping first (`src/server/middlew
 | `GET` | `/api/admin/config` | Publishable Supabase config for the admin SPA |
 | `POST` | `/api/admin/uploads/presign` | Admin Bearer JWT |
 | `POST` | `/api/admin/videos/:id/deactivate\|reactivate` | Soft-delete + R2 cleanup |
+| `GET` | `/api/admin/sessions` | Admin session list (Bearer JWT) |
 | `GET` | `/api/admin/sessions/:id/summary` | Admin event summary |
 
 Event names: `content_link_display`, `content_link_click`, `content_stub_exit`, `interest_prompt_display`, `interest_response`, `video_view`, `playlist_complete`, `survey_complete`. Each needs a client-generated UUID `event_id`.

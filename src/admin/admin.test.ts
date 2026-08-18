@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import {
   adminConfigResponseSchema,
+  adminSessionListQuerySchema,
+  adminSessionListResponseSchema,
   adminSessionSummarySchema,
   deactivateVideoResponseSchema,
   experimentConfigFormSchema,
@@ -11,6 +13,7 @@ import {
   videoFormSchema,
 } from "../shared/api/admin-schemas.ts";
 import { resolveAdminAppearance } from "../admin/lib/appearance.ts";
+import { formatDurationMs } from "../admin/lib/format.ts";
 import { isAdminAppMetadata } from "../shared/auth/admin.ts";
 
 describe("admin auth helper", () => {
@@ -74,6 +77,30 @@ describe("admin schemas", () => {
       },
     });
     expect(parsed.playlist_length).toBe(10);
+  });
+
+  test("adminSessionListResponseSchema parses session list payload", () => {
+    const parsed = adminSessionListResponseSchema.parse({
+      sessions: [
+        {
+          session_id: "550e8400-e29b-41d4-a716-446655440000",
+          community: "sikh",
+          source_type: "micro_influencer",
+          status: "in_progress",
+          current_position: 3,
+          assigned_at: "2026-06-08T12:00:00.000Z",
+        },
+      ],
+      total: 1,
+    });
+    expect(parsed.total).toBe(1);
+    expect(parsed.sessions[0]?.community).toBe("sikh");
+  });
+
+  test("adminSessionListQuerySchema defaults limit and offset", () => {
+    const parsed = adminSessionListQuerySchema.parse({});
+    expect(parsed.limit).toBe(50);
+    expect(parsed.offset).toBe(0);
   });
 
   test("presignUploadBodySchema validates upload payload", () => {
@@ -232,5 +259,15 @@ describe("admin appearance", () => {
   test("resolveAdminAppearance follows system preference in auto mode", () => {
     expect(resolveAdminAppearance("auto", true)).toBe(true);
     expect(resolveAdminAppearance("auto", false)).toBe(false);
+  });
+});
+
+describe("admin formatters", () => {
+  test("formatDurationMs uses milliseconds under one second", () => {
+    expect(formatDurationMs(250)).toBe("250ms");
+  });
+
+  test("formatDurationMs uses seconds with one decimal under ten seconds", () => {
+    expect(formatDurationMs(1200)).toBe("1.2s");
   });
 });
