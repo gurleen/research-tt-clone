@@ -278,10 +278,12 @@ create table evt_familiarity_response (
 
 The 8 logged events don't fire on every video (a filler with no prompt logs
 nothing), so position can't be reconstructed from events alone. The session row
-holds `current_position`, bumped as the participant advances. On
-refresh/reconnect the client does `GET /api/sessions/:id`, gets the same
-condition, the same `session_videos` order, and `current_position`, and resumes
-there. No re-randomization, no new `session_start`.
+holds `current_position`, a monotonic high-water mark bumped only when the
+feed advances past the furthest reached index. Rewind is client-only and must
+not PATCH a lower value. On refresh/reconnect the client does
+`GET /api/sessions/:id`, gets the same condition, the same `session_videos`
+order, and `current_position`, and resumes at furthest reached. No
+re-randomization, no new `session_start`.
 
 ---
 
@@ -313,7 +315,8 @@ condition, same order, same `current_position`. Idempotent read.
 
 **`PATCH /api/sessions/:session_id/position`** — advance the resume pointer.
 Body `{ position }`. Monotonic; a request to move backward is rejected. Called
-by the client when a `videoEnded` gate clears and the feed moves on.
+by the client only when the feed index exceeds the high-water mark. Rewind
+must not PATCH a lower index.
 
 ### Stub
 
@@ -385,7 +388,7 @@ arm. The override is rejected in production.
 | Randomized order, persisted | `session_videos` rows written once at creation |
 | Correct video set per condition | Playlist composer filters `videos` by `community`+`source_type` |
 | Source handle non-functional | Frontend; API exposes attribution as data only, no URL |
-| Advancement only on videoEnded | Frontend gate + `PATCH /position` monotonic check |
+| Resume pointer monotonic (high-water) | `PATCH /position` rejects backward; client skips rewind PATCHes |
 | Identical badge across conditions | API returns identical badge config; only attribution differs |
 | Log click before navigation | `sendBeacon` on click + thin insert handler |
 | Stub body constant, attribution-only difference | `stub_content` keyed by community; attribution from video |

@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -147,6 +148,10 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
   );
 
   const initialIndex = session?.current_position ?? 0;
+  const highWaterRef = useRef(initialIndex);
+  if (session && session.current_position > highWaterRef.current) {
+    highWaterRef.current = session.current_position;
+  }
 
   const markComplete = useCallback(() => {
     setState("complete");
@@ -155,6 +160,9 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
   const patchPosition = useCallback(
     async (position: number) => {
       if (!session) return;
+      // Resume pointer is monotonic; rewind is client-only and must not PATCH lower.
+      if (position <= highWaterRef.current) return;
+      highWaterRef.current = position;
       const result = await client.patchPosition(session.session_id, position);
       setSession((current) =>
         current

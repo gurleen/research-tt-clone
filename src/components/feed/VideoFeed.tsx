@@ -17,13 +17,7 @@ export function VideoFeed() {
   const { session, client, initialIndex, patchPosition, completePlaylist } =
     useStudySession();
   const { isLiked, toggleLike } = useLikes();
-  const {
-    currentIndex,
-    canGoForward,
-    handleTimeUpdate,
-    handleEnded,
-    goToIndex,
-  } = useVideoCompletion(initialIndex);
+  const { currentIndex, goToIndex } = useVideoCompletion(initialIndex);
 
   const isTouchDevice = useIsTouchDevice();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -34,10 +28,11 @@ export function VideoFeed() {
   const [progress, setProgress] = useState(0);
   const lastIndexRef = useRef(currentIndex);
   const completingRef = useRef(false);
+  const lastSlide = Math.max(videos.length - 1, 0);
 
   const goNext = useCallback(() => {
-    goToIndex(currentIndex + 1);
-  }, [currentIndex, goToIndex]);
+    if (currentIndex < lastSlide) goToIndex(currentIndex + 1);
+  }, [currentIndex, goToIndex, lastSlide]);
 
   const goPrev = useCallback(() => {
     if (currentIndex > 0) goToIndex(currentIndex - 1);
@@ -64,9 +59,12 @@ export function VideoFeed() {
       scrollToIndex(currentIndex);
       lastIndexRef.current = currentIndex;
       setProgress(0);
-      void patchPosition(currentIndex);
+      const highWater = session?.current_position ?? 0;
+      if (currentIndex > highWater) {
+        void patchPosition(currentIndex);
+      }
     }
-  }, [currentIndex, scrollToIndex, patchPosition]);
+  }, [currentIndex, scrollToIndex, patchPosition, session?.current_position]);
 
   useEffect(() => {
     scrollToIndex(initialIndex);
@@ -79,19 +77,13 @@ export function VideoFeed() {
 
     const index = Math.round(container.scrollTop / container.clientHeight);
     if (index === currentIndex) return;
-
-    if (index > currentIndex && !canGoForward) {
-      scrollToIndex(currentIndex);
-      return;
-    }
+    if (index < 0 || index > lastSlide) return;
 
     goToIndex(index);
-  }, [currentIndex, canGoForward, goToIndex, scrollToIndex]);
+  }, [currentIndex, goToIndex, lastSlide]);
 
   const onVideoEnded = useCallback(
     (index: number) => {
-      handleEnded(index);
-
       if (
         index === videos.length - 1 &&
         !completingRef.current &&
@@ -101,7 +93,7 @@ export function VideoFeed() {
         void completePlaylist();
       }
     },
-    [completePlaylist, handleEnded, session, videos.length],
+    [completePlaylist, session, videos.length],
   );
 
   return (
@@ -132,7 +124,6 @@ export function VideoFeed() {
               onOpenComments={() => setCommentsVideo(video)}
               onOpenLearnMore={() => setStubVideo(video)}
               onTimeUpdate={(current, duration) => {
-                handleTimeUpdate(index, current, duration);
                 if (index === currentIndex && duration > 0) {
                   setProgress(current / duration);
                 }
@@ -144,14 +135,6 @@ export function VideoFeed() {
       </div>
 
       <VideoProgressBar progress={progress} />
-
-      {!canGoForward && currentIndex < videos.length - 1 && (
-        <div className="absolute above-bottom-nav-md inset-x-0 z-10 flex justify-center pointer-events-none">
-          <span className="rounded-full bg-black/50 px-3 py-1 text-xs text-white/80">
-            Watch the full video to continue
-          </span>
-        </div>
-      )}
 
       {commentsVideo && (
         <CommentsSheet
