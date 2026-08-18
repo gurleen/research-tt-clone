@@ -224,6 +224,25 @@ create table evt_interest_response (
   server_received_at timestamptz not null default now()
 );
 
+-- One row per visit to a video (first view vs return vs rewatch).
+create table evt_video_view (
+  event_id           uuid primary key,
+  session_id         uuid not null references sessions(session_id),
+  video_id           text not null references videos(video_id),
+  video_type         video_type  not null,
+  source_type        source_type not null,
+  community          community   not null,
+  visit_index        integer     not null,
+  started_at         timestamptz not null,
+  ended_at           timestamptz not null,
+  dwell_ms           integer     not null,
+  playback_ms        integer     not null,
+  max_progress       double precision not null,
+  loop_count         integer     not null,
+  ended_reason       text        not null,  -- swipe | hidden | pagehide | playlist_complete
+  server_received_at timestamptz not null default now()
+);
+
 -- One per session; unique constraint makes completion idempotent.
 create table evt_playlist_complete (
   event_id           uuid primary key,
@@ -244,6 +263,7 @@ create index on evt_content_link_click      (session_id);
 create index on evt_content_stub_exit       (session_id);
 create index on evt_interest_prompt_display (session_id);
 create index on evt_interest_response       (session_id);
+create index on evt_video_view              (session_id);
 ```
 
 ## Deferred — Section 6 familiarity block (not built yet)
@@ -276,14 +296,14 @@ create table evt_familiarity_response (
 
 ## Resume / reconnect strategy
 
-The 8 logged events don't fire on every video (a filler with no prompt logs
-nothing), so position can't be reconstructed from events alone. The session row
-holds `current_position`, a monotonic high-water mark bumped only when the
-feed advances past the furthest reached index. Rewind is client-only and must
-not PATCH a lower value. On refresh/reconnect the client does
-`GET /api/sessions/:id`, gets the same condition, the same `session_videos`
-order, and `current_position`, and resumes at furthest reached. No
-re-randomization, no new `session_start`.
+The session row holds `current_position`, a monotonic high-water mark bumped
+only when the feed advances past the furthest reached index. Rewind is
+client-only and must not PATCH a lower value. Per-visit dwell is logged as
+`video_view` (`dwell_ms`, `playback_ms`, `visit_index`, `loop_count`). Playlist
+complete is an explicit Continue control on the last slide, not `videoEnded`.
+On refresh/reconnect the client does `GET /api/sessions/:id`, gets the same
+condition, the same `session_videos` order, and `current_position`, and resumes
+at furthest reached. No re-randomization, no new `session_start`.
 
 ---
 
@@ -389,6 +409,8 @@ arm. The override is rejected in production.
 | Correct video set per condition | Playlist composer filters `videos` by `community`+`source_type` |
 | Source handle non-functional | Frontend; API exposes attribution as data only, no URL |
 | Resume pointer monotonic (high-water) | `PATCH /position` rejects backward; client skips rewind PATCHes |
+| Per-visit dwell logged | `evt_video_view`; client sends timing only, server enriches condition |
+| Playlist complete without `ended` | Continue on last slide → `playlist_complete` → survey URL redirect |
 | Identical badge across conditions | API returns identical badge config; only attribution differs |
 | Log click before navigation | `sendBeacon` on click + thin insert handler |
 | Stub body constant, attribution-only difference | `stub_content` keyed by community; attribution from video |

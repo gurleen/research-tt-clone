@@ -112,6 +112,32 @@ export async function writeInterestResponse(
   });
 }
 
+export async function writeVideoView(
+  body: Extract<EventBody, { event: "video_view" }>,
+): Promise<{ duplicate: boolean }> {
+  const { session, video } = await enrichVideoEvent(
+    body.session_id,
+    body.video_id,
+  );
+
+  return idempotentInsert("evt_video_view", {
+    event_id: body.event_id,
+    session_id: body.session_id,
+    video_id: body.video_id,
+    video_type: video.video_type,
+    source_type: session.source_type,
+    community: session.community,
+    visit_index: body.visit_index,
+    started_at: body.started_at,
+    ended_at: body.ended_at,
+    dwell_ms: body.dwell_ms,
+    playback_ms: body.playback_ms,
+    max_progress: body.max_progress,
+    loop_count: body.loop_count,
+    ended_reason: body.ended_reason,
+  });
+}
+
 export async function writePlaylistComplete(
   body: Extract<EventBody, { event: "playlist_complete" }>,
   origin: string,

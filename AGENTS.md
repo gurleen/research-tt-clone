@@ -167,7 +167,7 @@ All `/api/*` requests run through IP-header stripping first (`src/server/middlew
 | `POST` | `/api/admin/videos/:id/deactivate\|reactivate` | Soft-delete + R2 cleanup |
 | `GET` | `/api/admin/sessions/:id/summary` | Admin event summary |
 
-Event names: `content_link_display`, `content_link_click`, `content_stub_exit`, `interest_prompt_display`, `interest_response`, `playlist_complete`, `survey_complete`. Each needs a client-generated UUID `event_id`.
+Event names: `content_link_display`, `content_link_click`, `content_stub_exit`, `interest_prompt_display`, `interest_response`, `video_view`, `playlist_complete`, `survey_complete`. Each needs a client-generated UUID `event_id`.
 
 ## Experiment integrity (do not break)
 

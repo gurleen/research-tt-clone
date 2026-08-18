@@ -401,6 +401,75 @@ export type Database = {
           },
         ];
       };
+      evt_video_view: {
+        Row: {
+          community: Database["public"]["Enums"]["community"];
+          dwell_ms: number;
+          ended_at: string;
+          ended_reason: string;
+          event_id: string;
+          loop_count: number;
+          max_progress: number;
+          playback_ms: number;
+          server_received_at: string;
+          session_id: string;
+          source_type: Database["public"]["Enums"]["source_type"];
+          started_at: string;
+          video_id: string;
+          video_type: Database["public"]["Enums"]["video_type"];
+          visit_index: number;
+        };
+        Insert: {
+          community: Database["public"]["Enums"]["community"];
+          dwell_ms: number;
+          ended_at: string;
+          ended_reason: string;
+          event_id: string;
+          loop_count: number;
+          max_progress: number;
+          playback_ms: number;
+          server_received_at?: string;
+          session_id: string;
+          source_type: Database["public"]["Enums"]["source_type"];
+          started_at: string;
+          video_id: string;
+          video_type: Database["public"]["Enums"]["video_type"];
+          visit_index: number;
+        };
+        Update: {
+          community?: Database["public"]["Enums"]["community"];
+          dwell_ms?: number;
+          ended_at?: string;
+          ended_reason?: string;
+          event_id?: string;
+          loop_count?: number;
+          max_progress?: number;
+          playback_ms?: number;
+          server_received_at?: string;
+          session_id?: string;
+          source_type?: Database["public"]["Enums"]["source_type"];
+          started_at?: string;
+          video_id?: string;
+          video_type?: Database["public"]["Enums"]["video_type"];
+          visit_index?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "evt_video_view_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "sessions";
+            referencedColumns: ["session_id"];
+          },
+          {
+            foreignKeyName: "evt_video_view_video_id_fkey";
+            columns: ["video_id"];
+            isOneToOne: false;
+            referencedRelation: "videos";
+            referencedColumns: ["video_id"];
+          },
+        ];
+      };
       experiment_config: {
         Row: {
           community: Database["public"]["Enums"]["community"];

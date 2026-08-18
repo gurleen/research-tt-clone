@@ -10,6 +10,7 @@ import {
   writeInterestResponse,
   writePlaylistComplete,
   writeSurveyCompleteEvent,
+  writeVideoView,
 } from "../../services/events/writers.ts";
 
 export async function handleIngestEvent(req: Request): Promise<Response> {
@@ -36,6 +37,8 @@ async function dispatchEvent(body: EventBody, origin: string) {
       return writeInterestPromptDisplay(body);
     case "interest_response":
       return writeInterestResponse(body);
+    case "video_view":
+      return writeVideoView(body);
     case "playlist_complete":
       return writePlaylistComplete(body, origin);
     case "survey_complete":
