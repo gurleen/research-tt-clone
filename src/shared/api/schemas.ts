@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { COMMUNITIES, EVENT_NAMES, SOURCE_TYPES } from "./events.ts";
+import {
+  COMMUNITIES,
+  EVENT_NAMES,
+  SOURCE_TYPES,
+  VIDEO_VIEW_ENDED_REASONS,
+} from "./events.ts";
 
 const uuid = z.uuid();
 const isoTimestamp = z.iso.datetime({ offset: true });
@@ -116,6 +121,19 @@ export const interestResponseEventSchema = eventBaseSchema.extend({
   latency_ms: z.number().int().nonnegative(),
 });
 
+export const videoViewEventSchema = eventBaseSchema.extend({
+  event: z.literal("video_view"),
+  video_id: z.string(),
+  visit_index: z.number().int().min(1),
+  started_at: isoTimestamp,
+  ended_at: isoTimestamp,
+  dwell_ms: z.number().int().nonnegative(),
+  playback_ms: z.number().int().nonnegative(),
+  max_progress: z.number().nonnegative(),
+  loop_count: z.number().int().nonnegative(),
+  ended_reason: z.enum(VIDEO_VIEW_ENDED_REASONS),
+});
+
 export const playlistCompleteEventSchema = eventBaseSchema.extend({
   event: z.literal("playlist_complete"),
   timestamp: isoTimestamp,
@@ -132,6 +150,7 @@ export const eventBodySchema = z.discriminatedUnion("event", [
   contentStubExitEventSchema,
   interestPromptDisplayEventSchema,
   interestResponseEventSchema,
+  videoViewEventSchema,
   playlistCompleteEventSchema,
   surveyCompleteEventSchema,
 ]).superRefine((value, ctx) => {
@@ -149,6 +168,14 @@ export const eventBodySchema = z.discriminatedUnion("event", [
     "response",
     "timestamp_response",
     "timestamp",
+    "visit_index",
+    "started_at",
+    "ended_at",
+    "dwell_ms",
+    "playback_ms",
+    "max_progress",
+    "loop_count",
+    "ended_reason",
   ]);
   for (const key of allowedKeys) {
     if (!knownKeys.has(key)) {

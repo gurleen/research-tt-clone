@@ -5,6 +5,7 @@ export type {
   EventTableName,
   SourceType,
   VideoType,
+  VideoViewEndedReason,
 } from "./events.ts";
 
 export type {
@@ -30,6 +31,7 @@ export {
   SOURCE_TYPES,
   VIDEO_EVENTS,
   VIDEO_TYPES,
+  VIDEO_VIEW_ENDED_REASONS,
 } from "./events.ts";
 
 export {

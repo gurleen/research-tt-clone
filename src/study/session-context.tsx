@@ -35,6 +35,7 @@ type StudySessionContextValue = {
   client: PlatformApiClient;
   videos: StudyFeedVideo[];
   initialIndex: number;
+  handoffUrl: string | null;
   markComplete: () => void;
   patchPosition: (position: number) => Promise<void>;
   completePlaylist: () => Promise<void>;
@@ -76,6 +77,7 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<StudySessionState>("loading");
   const [error, setError] = useState<string | null>(null);
   const [session, setSession] = useState<SessionResponse | null>(null);
+  const [handoffUrl, setHandoffUrl] = useState<string | null>(null);
 
   const urlCommunity = searchParams.get("community");
   const urlSessionId = searchParams.get("session_id");
@@ -175,12 +177,15 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
 
   const completePlaylist = useCallback(async () => {
     if (!session) return;
-    await client.postEvent({
+    const result = await client.postEvent({
       event_id: crypto.randomUUID(),
       session_id: session.session_id,
       event: "playlist_complete",
       timestamp: new Date().toISOString(),
     });
+    if ("url" in result && result.url) {
+      setHandoffUrl(result.url);
+    }
     setSession((current) =>
       current ? { ...current, status: "playlist_complete" } : current,
     );
@@ -195,6 +200,7 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
       client,
       videos,
       initialIndex,
+      handoffUrl,
       markComplete,
       patchPosition,
       completePlaylist,
@@ -206,6 +212,7 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
       client,
       videos,
       initialIndex,
+      handoffUrl,
       markComplete,
       patchPosition,
       completePlaylist,

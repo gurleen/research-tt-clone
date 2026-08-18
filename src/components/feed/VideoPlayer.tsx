@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef } from "react";
+import { detectLoopWrap } from "../../hooks/video-dwell.ts";
 
 type VideoPlayerProps = {
   src: string;
   isActive: boolean;
   userPaused: boolean;
   onTimeUpdate: (currentTime: number, duration: number) => void;
-  onEnded: () => void;
+  onLoop: () => void;
+  onPlayingChange: (playing: boolean) => void;
 };
 
 async function startPlayback(video: HTMLVideoElement): Promise<void> {
@@ -24,9 +26,12 @@ export function VideoPlayer({
   isActive,
   userPaused,
   onTimeUpdate,
-  onEnded,
+  onLoop,
+  onPlayingChange,
 }: VideoPlayerProps) {
   const ref = useRef<HTMLVideoElement>(null);
+  const lastTimeRef = useRef(0);
+  const ignoreWrapRef = useRef(true);
 
   const play = useCallback(async () => {
     const video = ref.current;
@@ -46,6 +51,8 @@ export function VideoPlayer({
       return;
     }
 
+    ignoreWrapRef.current = true;
+    lastTimeRef.current = 0;
     video.currentTime = 0;
     if (!userPaused) void play();
 
@@ -82,11 +89,28 @@ export function VideoPlayer({
       preload="auto"
       loop
       muted={false}
+      onPlay={() => {
+        if (isActive) onPlayingChange(true);
+      }}
+      onPause={() => {
+        if (isActive) onPlayingChange(false);
+      }}
       onTimeUpdate={(e) => {
         const v = e.currentTarget;
-        onTimeUpdate(v.currentTime, v.duration);
+        const currentTime = v.currentTime;
+        const duration = v.duration;
+        if (
+          !ignoreWrapRef.current &&
+          detectLoopWrap(lastTimeRef.current, currentTime, duration)
+        ) {
+          onLoop();
+        }
+        if (ignoreWrapRef.current && currentTime > 0.05) {
+          ignoreWrapRef.current = false;
+        }
+        lastTimeRef.current = currentTime;
+        onTimeUpdate(currentTime, duration);
       }}
-      onEnded={onEnded}
     />
   );
 }

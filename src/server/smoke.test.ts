@@ -26,6 +26,43 @@ describe("shared API schemas", () => {
     });
     expect(parsed.success).toBe(true);
   });
+
+  test("eventBodySchema accepts video_view payload", () => {
+    const parsed = eventBodySchema.safeParse({
+      event_id: "550e8400-e29b-41d4-a716-446655440000",
+      session_id: "550e8400-e29b-41d4-a716-446655440001",
+      event: "video_view",
+      video_id: "filler_01",
+      visit_index: 1,
+      started_at: "2026-08-18T12:00:00.000Z",
+      ended_at: "2026-08-18T12:00:03.000Z",
+      dwell_ms: 3000,
+      playback_ms: 2800,
+      max_progress: 0.9,
+      loop_count: 0,
+      ended_reason: "swipe",
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  test("eventBodySchema rejects condition fields on video_view", () => {
+    const parsed = eventBodySchema.safeParse({
+      event_id: "550e8400-e29b-41d4-a716-446655440000",
+      session_id: "550e8400-e29b-41d4-a716-446655440001",
+      event: "video_view",
+      video_id: "filler_01",
+      visit_index: 1,
+      started_at: "2026-08-18T12:00:00.000Z",
+      ended_at: "2026-08-18T12:00:03.000Z",
+      dwell_ms: 3000,
+      playback_ms: 2800,
+      max_progress: 0.9,
+      loop_count: 0,
+      ended_reason: "swipe",
+      source_type: "institutional",
+    });
+    expect(parsed.success).toBe(false);
+  });
 });
 
 describe("API integration", () => {

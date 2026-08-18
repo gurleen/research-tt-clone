@@ -6,6 +6,8 @@ import { VideoSlide } from "./VideoSlide";
 import { useIsTouchDevice } from "../../hooks/useIsTouchDevice";
 import { useLikes } from "../../hooks/useLikes";
 import { useVideoCompletion } from "../../hooks/useVideoCompletion";
+import { useVideoDwell } from "../../hooks/useVideoDwell.ts";
+import { shouldShowContinue } from "../../hooks/video-dwell.ts";
 import {
   useStudyPlaylist,
   useStudySession,
@@ -29,6 +31,11 @@ export function VideoFeed() {
   const lastIndexRef = useRef(currentIndex);
   const completingRef = useRef(false);
   const lastSlide = Math.max(videos.length - 1, 0);
+  const activeVideo = videos[currentIndex];
+  const { onTimeUpdate, onLoop, onPlayingChange, flush } = useVideoDwell({
+    sessionId: session?.session_id,
+    videoId: activeVideo?.video_id,
+  });
 
   const goNext = useCallback(() => {
     if (currentIndex < lastSlide) goToIndex(currentIndex + 1);
@@ -82,19 +89,12 @@ export function VideoFeed() {
     goToIndex(index);
   }, [currentIndex, goToIndex, lastSlide]);
 
-  const onVideoEnded = useCallback(
-    (index: number) => {
-      if (
-        index === videos.length - 1 &&
-        !completingRef.current &&
-        session
-      ) {
-        completingRef.current = true;
-        void completePlaylist();
-      }
-    },
-    [completePlaylist, session, videos.length],
-  );
+  const handleContinue = useCallback(() => {
+    if (completingRef.current || !session) return;
+    completingRef.current = true;
+    flush("playlist_complete");
+    void completePlaylist();
+  }, [completePlaylist, flush, session]);
 
   return (
     <>
@@ -126,15 +126,29 @@ export function VideoFeed() {
               onTimeUpdate={(current, duration) => {
                 if (index === currentIndex && duration > 0) {
                   setProgress(current / duration);
+                  onTimeUpdate(current, duration);
                 }
               }}
-              onEnded={() => onVideoEnded(index)}
+              onLoop={onLoop}
+              onPlayingChange={onPlayingChange}
             />
           </div>
         ))}
       </div>
 
       <VideoProgressBar progress={progress} />
+
+      {shouldShowContinue(currentIndex, videos.length) && (
+        <div className="absolute above-bottom-nav inset-x-0 z-20 flex justify-center pb-3 pointer-events-none">
+          <button
+            type="button"
+            onClick={handleContinue}
+            className="pointer-events-auto rounded-full bg-white px-6 py-2 text-sm font-semibold text-black"
+          >
+            Continue
+          </button>
+        </div>
+      )}
 
       {commentsVideo && (
         <CommentsSheet
