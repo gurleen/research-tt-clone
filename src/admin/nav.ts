@@ -31,6 +31,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Survey URL and debrief page copy",
   },
   {
+    label: "Sessions",
+    path: "/admin/sessions",
+    description: "Browse previous sessions and inspect events",
+  },
+  {
     label: "Test session",
     path: "/admin/test-session",
     description: "Launch a walkthrough session and inspect events",

@@ -5,6 +5,7 @@ import {
   type AdminSessionSummary,
 } from "../../shared/api/admin-schemas.ts";
 import { useAdminAuth } from "../auth/AdminAuthProvider.tsx";
+import { SessionEventTables } from "../components/SessionEventTables.tsx";
 import { Alert } from "../../components/ui/alert.tsx";
 import { Badge } from "../../components/ui/badge.tsx";
 import { Button } from "../../components/ui/button.tsx";
@@ -16,14 +17,10 @@ import {
   CardTitle,
 } from "../../components/ui/card.tsx";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../../components/ui/table.tsx";
-import { formatCommunity, formatTimestamp } from "../lib/format.ts";
+  formatCommunity,
+  formatSourceType,
+  formatTimestamp,
+} from "../lib/format.ts";
 
 export function SessionStatsPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -73,13 +70,13 @@ export function SessionStatsPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link
-            to="/admin/test-session"
+            to="/admin/sessions"
             className="text-sm text-zinc-500 hover:text-zinc-800"
           >
-            Back to test session
+            Back to sessions
           </Link>
           <h1 className="mt-2 text-2xl font-semibold text-zinc-900">
-            Session stats
+            Session
           </h1>
           <p className="mt-1 break-all font-mono text-sm text-zinc-600">
             {sessionId}
@@ -123,7 +120,9 @@ export function SessionStatsPage() {
               </div>
               <div>
                 <p className="text-xs text-zinc-500">Source type</p>
-                <p className="font-medium">{summary.session.source_type}</p>
+                <p className="font-medium">
+                  {formatSourceType(summary.session.source_type)}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-zinc-500">Status</p>
@@ -139,48 +138,10 @@ export function SessionStatsPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Event counts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Event table</TableHead>
-                    <TableHead>Count</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {Object.entries(summary.event_counts).map(([table, count]) => (
-                    <TableRow key={table}>
-                      <TableCell className="font-mono text-xs">{table}</TableCell>
-                      <TableCell>{count}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Raw events</CardTitle>
-              <CardDescription>Latest captured rows per event type</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {Object.entries(summary.events).map(([table, rows]) => (
-                <div key={table}>
-                  <p className="mb-2 font-mono text-xs font-semibold text-zinc-700">
-                    {table}
-                  </p>
-                  <pre className="max-h-48 overflow-auto rounded-md bg-zinc-950 p-3 text-xs text-zinc-100">
-                    {JSON.stringify(rows, null, 2)}
-                  </pre>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+          <SessionEventTables
+            eventCounts={summary.event_counts}
+            events={summary.events}
+          />
         </>
       ) : null}
     </div>

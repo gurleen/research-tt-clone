@@ -164,20 +164,49 @@ const sessionEventTableSchema = z.enum([
   "evt_survey_complete",
 ]);
 
+export const SESSION_STATUSES = [
+  "in_progress",
+  "playlist_complete",
+  "survey_complete",
+  "debriefed",
+] as const;
+
+export const sessionStatusSchema = z.enum(SESSION_STATUSES);
+
+export const adminSessionListItemSchema = z.object({
+  session_id: z.string().uuid(),
+  community: communitySchema,
+  source_type: z.enum(["micro_influencer", "institutional"]),
+  status: z.string(),
+  current_position: z.number().int().nonnegative(),
+  assigned_at: z.string(),
+});
+
+export const adminSessionListQuerySchema = z.object({
+  community: communitySchema.optional(),
+  source_type: z.enum(["micro_influencer", "institutional"]).optional(),
+  status: sessionStatusSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+export const adminSessionListResponseSchema = z.object({
+  sessions: z.array(adminSessionListItemSchema),
+  total: z.number().int().nonnegative(),
+});
+
 export const adminSessionSummarySchema = z.object({
-  session: z.object({
-    session_id: z.string().uuid(),
-    community: communitySchema,
-    source_type: z.enum(["micro_influencer", "institutional"]),
-    status: z.string(),
-    current_position: z.number().int().nonnegative(),
-    assigned_at: z.string(),
-  }),
+  session: adminSessionListItemSchema,
   playlist_length: z.number().int().nonnegative(),
   event_counts: z.record(sessionEventTableSchema, z.number().int().nonnegative()),
   events: z.record(sessionEventTableSchema, z.array(z.record(z.string(), z.unknown()))),
 });
 
+export type AdminSessionListItem = z.infer<typeof adminSessionListItemSchema>;
+export type AdminSessionListQuery = z.infer<typeof adminSessionListQuerySchema>;
+export type AdminSessionListResponse = z.infer<
+  typeof adminSessionListResponseSchema
+>;
 export type AdminSessionSummary = z.infer<typeof adminSessionSummarySchema>;
 
 export const deactivateVideoResponseSchema = z.object({
