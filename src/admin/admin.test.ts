@@ -306,6 +306,24 @@ describe("admin schemas", () => {
     expect(parsed.success).toBe(true);
   });
 
+  test("experimentConfigFormSchema rejects filler max that cannot space ingroup", () => {
+    const parsed = experimentConfigFormSchema.safeParse({
+      community: "sikh",
+      ingroup_count_min: 5,
+      ingroup_count_max: 5,
+      filler_count_min: 3,
+      filler_count_max: 3,
+      prompt_probability: 0.45,
+      prompt_min_spacing: 1,
+    });
+    expect(parsed.success).toBe(false);
+    if (!parsed.success) {
+      expect(parsed.error.issues[0]?.message).toMatch(
+        /Need at least 8 filler videos/,
+      );
+    }
+  });
+
   test("platformSettingsFormSchema requires session_id placeholder", () => {
     const parsed = platformSettingsFormSchema.safeParse({
       survey_url: "https://survey.example.com",

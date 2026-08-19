@@ -104,7 +104,7 @@ Ingroup videos get `show_learn_more`. Fillers may get `show_interest_prompt`. Pr
 | --- | --- |
 | Create session + balanced randomization | `src/server/services/sessions/create-session.ts`, `…/randomization/assign-source-type.ts` |
 | Playlist composition | `src/server/services/playlist/compose-playlist.ts` |
-| Ingroup/filler shuffle + 1–2 filler gap | `shuffle-ingroup-filler.ts` |
+| Ingroup/filler shuffle + min 2 fillers between consecutive ingroup | `shuffle-ingroup-filler.ts` |
 | Prompt probability / min-spacing | `place-prompts.ts` |
 | Resume pointer (monotonic) | `advance-position.ts` |
 | Session JSON for the client | `build-session-response.ts` |

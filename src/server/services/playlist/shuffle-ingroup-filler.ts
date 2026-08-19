@@ -5,7 +5,7 @@ import {
 import type { VideoRow } from "../../db/tables.ts";
 import type { PlaylistSlot } from "./place-prompts.ts";
 
-export const MIN_FILLERS_BETWEEN_INGROUP = 1;
+export const MIN_FILLERS_BETWEEN_INGROUP = 2;
 export const MAX_FILLERS_BETWEEN_INGROUP = 2;
 
 export function minFillerCountForIngroupSpacing(ingroupCount: number): number {
@@ -42,7 +42,7 @@ export function fillerCountBetween(
     .filter((slot) => slot.video_type === "filler").length;
 }
 
-/** True when every pair of consecutive ingroup slots has 1–2 fillers between them. */
+/** True when every pair of consecutive ingroup slots has 2 fillers between them. */
 export function hasValidIngroupSpacing(slots: PlaylistSlot[]): boolean {
   const ingroupIndices = slots
     .map((slot, index) => (slot.video_type === "ingroup" ? index : -1))
@@ -66,7 +66,7 @@ export function hasValidIngroupSpacing(slots: PlaylistSlot[]): boolean {
 }
 
 /**
- * Interleave ingroup videos into filler with 1–2 filler videos between each
+ * Interleave ingroup videos into filler with 2 filler videos between each
  * consecutive ingroup slot. Extra filler goes to the start and/or end.
  */
 export function shuffleIngroupIntoFiller(

@@ -31,15 +31,15 @@ function mockVideo(id: string, type: "ingroup" | "filler"): VideoRow {
 }
 
 describe("minFillerCountForIngroupSpacing", () => {
-  test("requires one filler between each ingroup pair", () => {
+  test("requires two fillers between each ingroup pair", () => {
     expect(minFillerCountForIngroupSpacing(1)).toBe(0);
-    expect(minFillerCountForIngroupSpacing(3)).toBe(2);
-    expect(minFillerCountForIngroupSpacing(5)).toBe(4);
+    expect(minFillerCountForIngroupSpacing(3)).toBe(4);
+    expect(minFillerCountForIngroupSpacing(5)).toBe(8);
   });
 });
 
 describe("shuffleIngroupIntoFiller", () => {
-  test("keeps 1-2 filler videos between consecutive ingroup slots", () => {
+  test("keeps 2 filler videos between consecutive ingroup slots", () => {
     const ingroup = [
       mockVideo("ingroup_1", "ingroup"),
       mockVideo("ingroup_2", "ingroup"),
@@ -65,7 +65,7 @@ describe("shuffleIngroupIntoFiller", () => {
     const filler = [mockVideo("filler_0", "filler")];
 
     expect(() => shuffleIngroupIntoFiller(ingroup, filler)).toThrow(
-      /need at least 2, have 1/,
+      /need at least 4, have 1/,
     );
   });
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { spacingImpossibleMessage } from "../../server/services/playlist/playlist-config-issues.ts";
 import { catalogCommentSchema } from "./schemas.ts";
 
 export const presignUploadBodySchema = z.object({
@@ -120,6 +121,17 @@ export const experimentConfigFormSchema = z
       ctx.addIssue({
         code: "custom",
         message: "Filler min cannot exceed max",
+        path: ["filler_count_max"],
+      });
+    }
+    const spacing = spacingImpossibleMessage(
+      value.ingroup_count_max,
+      value.filler_count_max,
+    );
+    if (spacing) {
+      ctx.addIssue({
+        code: "custom",
+        message: spacing,
         path: ["filler_count_max"],
       });
     }

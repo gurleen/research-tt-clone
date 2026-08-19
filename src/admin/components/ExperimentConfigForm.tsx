@@ -1,5 +1,10 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { Tables } from "../../server/db/database.types.ts";
+import {
+  catalogCountsFromVideos,
+  playlistConfigIssues,
+  type PlaylistVideoCountRow,
+} from "../../server/services/playlist/playlist-config-issues.ts";
 import { experimentConfigFormSchema } from "../../shared/api/admin-schemas.ts";
 import { useAdminAuth } from "../auth/AdminAuthProvider.tsx";
 import { formatTimestamp } from "../lib/format.ts";
@@ -12,11 +17,13 @@ type ExperimentConfigRow = Tables<"experiment_config">;
 
 type ExperimentConfigFormProps = {
   row: ExperimentConfigRow;
+  videos: PlaylistVideoCountRow[] | null;
   onSaved: (row: ExperimentConfigRow) => void;
 };
 
 export function ExperimentConfigForm({
   row,
+  videos,
   onSaved,
 }: ExperimentConfigFormProps) {
   const { client } = useAdminAuth();
@@ -42,6 +49,18 @@ export function ExperimentConfigForm({
       prompt_min_spacing: row.prompt_min_spacing,
     });
   }, [row]);
+
+  const configIssues = useMemo(() => {
+    return playlistConfigIssues(
+      {
+        ingroup_count_min: form.ingroup_count_min,
+        ingroup_count_max: form.ingroup_count_max,
+        filler_count_min: form.filler_count_min,
+        filler_count_max: form.filler_count_max,
+      },
+      videos ? catalogCountsFromVideos(videos, row.community) : null,
+    );
+  }, [form, row.community, videos]);
 
   function updateNumberField(
     key: keyof typeof form,
@@ -101,11 +120,17 @@ export function ExperimentConfigForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <p className="text-sm text-zinc-600">
         Playlist counts and interest-prompt rules used when creating new
-        sessions. Set min = max for a fixed count.
+        sessions. Set min = max for a fixed count. Consecutive ingroup videos
+        always have at least 2 fillers between them.
       </p>
 
       {error && <Alert variant="destructive">{error}</Alert>}
       {success && <Alert>{success}</Alert>}
+      {configIssues.map((issue) => (
+        <Alert key={`${issue.kind}:${issue.message}`} variant="destructive">
+          {issue.message}
+        </Alert>
+      ))}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Tables } from "../../server/db/database.types.ts";
+import type { PlaylistVideoCountRow } from "../../server/services/playlist/playlist-config-issues.ts";
 import { useAdminAuth } from "../auth/AdminAuthProvider.tsx";
 import { CommunityTabbedPanel } from "../components/CommunityTabbedPanel.tsx";
 import { ExperimentConfigForm } from "../components/ExperimentConfigForm.tsx";
@@ -10,6 +11,7 @@ type ExperimentConfigRow = Tables<"experiment_config">;
 export function ExperimentConfigPage() {
   const { client } = useAdminAuth();
   const [rows, setRows] = useState<ExperimentConfigRow[]>([]);
+  const [videos, setVideos] = useState<PlaylistVideoCountRow[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,18 +21,34 @@ export function ExperimentConfigPage() {
     setLoading(true);
     setError(null);
 
-    const { data, error: queryError } = await client
-      .from("experiment_config")
-      .select("*")
-      .order("community", { ascending: true });
+    const [configResult, videosResult] = await Promise.all([
+      client.from("experiment_config").select("*").order("community", {
+        ascending: true,
+      }),
+      client
+        .from("videos")
+        .select("video_type, community, source_type")
+        .eq("active", true),
+    ]);
 
-    if (queryError) {
-      setError(queryError.message);
+    if (configResult.error) {
+      setError(configResult.error.message);
       setRows([]);
-    } else {
-      setRows(data ?? []);
+      setVideos(null);
+      setLoading(false);
+      return;
     }
 
+    if (videosResult.error) {
+      setError(videosResult.error.message);
+      setRows(configResult.data ?? []);
+      setVideos(null);
+      setLoading(false);
+      return;
+    }
+
+    setRows(configResult.data ?? []);
+    setVideos(videosResult.data ?? []);
     setLoading(false);
   }, [client]);
 
@@ -68,7 +86,11 @@ export function ExperimentConfigPage() {
           title="Community playlist settings"
           description="Select a community to edit ingroup/filler counts and prompt rules."
           renderPanel={(row) => (
-            <ExperimentConfigForm row={row} onSaved={handleSaved} />
+            <ExperimentConfigForm
+              row={row}
+              videos={videos}
+              onSaved={handleSaved}
+            />
           )}
         />
       )}
