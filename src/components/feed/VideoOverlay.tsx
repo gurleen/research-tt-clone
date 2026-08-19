@@ -4,11 +4,11 @@ import { SideActions } from "./SideActions";
 import { VideoInfo } from "./VideoInfo";
 import { VideoInteractionLayer } from "./VideoInteractionLayer";
 import { VideoPlayer } from "./VideoPlayer";
+import { shouldRevealInterestPrompt } from "./interest-prompt-reveal.ts";
 import { InterestPrompt } from "../study/InterestPrompt.tsx";
 import type { PlatformApiClient } from "../../client/platform-api.ts";
 import type { StudyFeedVideo } from "../../types/feed";
-
-export const INTEREST_PROMPT_DELAY_MS = 3000;
+import { DEFAULT_INTEREST_PROMPT_REVEAL_FRACTION } from "../../shared/experiment/interest-prompt-timing.ts";
 
 type VideoOverlayProps = {
   video: StudyFeedVideo;
@@ -17,6 +17,7 @@ type VideoOverlayProps = {
   touchEnabled: boolean;
   sessionId?: string;
   client?: PlatformApiClient;
+  interestPromptRevealFraction?: number;
   onOpenLearnMore?: () => void;
   onToggleLike: () => void;
   onDoubleTapLike: () => void;
@@ -35,6 +36,7 @@ export function VideoOverlay({
   touchEnabled,
   sessionId,
   client,
+  interestPromptRevealFraction = DEFAULT_INTEREST_PROMPT_REVEAL_FRACTION,
   onOpenLearnMore,
   onToggleLike,
   onDoubleTapLike,
@@ -53,17 +55,7 @@ export function VideoOverlay({
     setUserPaused(false);
     setPromptDismissed(false);
     setPromptReady(false);
-
-    if (!isActive || !video.show_interest_prompt) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setPromptReady(true);
-    }, INTEREST_PROMPT_DELAY_MS);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [video.id, isActive, video.show_interest_prompt]);
+  }, [video.id, isActive]);
 
   const handleTogglePlay = useCallback(() => {
     let nowPaused = false;
@@ -73,6 +65,39 @@ export function VideoOverlay({
     });
     return nowPaused;
   }, []);
+
+  const handleTimeUpdate = useCallback(
+    (currentTime: number, duration: number) => {
+      onTimeUpdate(currentTime, duration);
+
+      if (
+        promptReady ||
+        promptDismissed ||
+        !isActive ||
+        !video.show_interest_prompt
+      ) {
+        return;
+      }
+
+      if (
+        shouldRevealInterestPrompt(
+          currentTime,
+          duration,
+          interestPromptRevealFraction,
+        )
+      ) {
+        setPromptReady(true);
+      }
+    },
+    [
+      onTimeUpdate,
+      promptReady,
+      promptDismissed,
+      isActive,
+      video.show_interest_prompt,
+      interestPromptRevealFraction,
+    ],
+  );
 
   const showPrompt =
     isActive &&
@@ -88,7 +113,7 @@ export function VideoOverlay({
         src={video.videoUrl}
         isActive={isActive}
         userPaused={userPaused}
-        onTimeUpdate={onTimeUpdate}
+        onTimeUpdate={handleTimeUpdate}
         onLoop={onLoop}
         onPlayingChange={onPlayingChange}
       />

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { communitySchema, createSessionBodySchema, eventBodySchema, parseCatalogComments } from "../shared/api/schemas.ts";
+import { communitySchema, createSessionBodySchema, eventBodySchema, parseCatalogComments, sessionResponseSchema } from "../shared/api/schemas.ts";
 
 describe("shared API schemas", () => {
   test("communitySchema accepts valid communities", () => {
@@ -178,6 +178,29 @@ describe("shared API schemas", () => {
     ).toEqual([{ username: "fan", text: "hello", timestamp: "2d ago" }]);
     expect(parseCatalogComments("not-an-array")).toEqual([]);
     expect(parseCatalogComments([{ username: "fan" }])).toEqual([]);
+  });
+
+  test("sessionResponseSchema defaults interest_prompt_reveal_fraction to 0.3", () => {
+    const parsed = sessionResponseSchema.parse({
+      session_id: "550e8400-e29b-41d4-a716-446655440000",
+      community: "sikh",
+      current_position: 0,
+      status: "in_progress",
+      playlist: [],
+    });
+    expect(parsed.interest_prompt_reveal_fraction).toBe(0.3);
+  });
+
+  test("sessionResponseSchema accepts a configured reveal fraction", () => {
+    const parsed = sessionResponseSchema.parse({
+      session_id: "550e8400-e29b-41d4-a716-446655440000",
+      community: "sikh",
+      current_position: 0,
+      status: "in_progress",
+      playlist: [],
+      interest_prompt_reveal_fraction: 0.45,
+    });
+    expect(parsed.interest_prompt_reveal_fraction).toBe(0.45);
   });
 });
 

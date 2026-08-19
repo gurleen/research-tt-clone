@@ -1,4 +1,5 @@
 import { PLATFORM_SETTING_KEYS } from "../../../shared/api/admin-schemas.ts";
+import { parseInterestPromptRevealFraction } from "../../../shared/experiment/interest-prompt-timing.ts";
 import { db } from "../../db/client.ts";
 import { envFallbackSettings } from "../../config/env.ts";
 
@@ -10,6 +11,7 @@ export type PlatformSettings = {
     withdrawal: string;
     contact: string;
   };
+  interestPromptRevealFraction: number;
 };
 
 function mapRowsToSettings(
@@ -27,6 +29,10 @@ function mapRowsToSettings(
         byKey.get("debrief_withdrawal") ?? fallback.debrief.withdrawal,
       contact: byKey.get("debrief_contact") ?? fallback.debrief.contact,
     },
+    interestPromptRevealFraction: parseInterestPromptRevealFraction(
+      byKey.get("interest_prompt_reveal_fraction") ??
+        String(fallback.interestPromptRevealFraction),
+    ),
   };
 }
 

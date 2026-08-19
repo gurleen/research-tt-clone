@@ -60,6 +60,7 @@ export const envFallbackSettings = {
     ),
     contact: optional("DEBRIEF_CONTACT", "research@example.com"),
   },
+  interestPromptRevealFraction: 0.3,
 } as const;
 
 export function buildDebriefUrl(sessionId: string, origin: string): string {

@@ -9,6 +9,7 @@ type VideoSlideProps = {
   touchEnabled: boolean;
   sessionId?: string;
   client?: PlatformApiClient;
+  interestPromptRevealFraction?: number;
   onOpenLearnMore?: () => void;
   onToggleLike: () => void;
   onDoubleTapLike: () => void;

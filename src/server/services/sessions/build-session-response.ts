@@ -3,14 +3,16 @@ import { parseCatalogComments } from "../../../shared/api/schemas.ts";
 import type { SessionResponse } from "../../../shared/api/types.ts";
 import type { VideoType } from "../../../shared/api/events.ts";
 import type { SessionRow } from "../../db/tables.ts";
+import { loadPlatformSettings } from "../platform-settings/load-settings.ts";
 
 export async function buildSessionResponse(
   session: SessionRow,
 ): Promise<SessionResponse> {
-  const { data: rows, error } = await db
-    .from("session_videos")
-    .select(
-      `
+  const [playlistResult, settings] = await Promise.all([
+    db
+      .from("session_videos")
+      .select(
+        `
       position,
       show_interest_prompt,
       videos (
@@ -30,9 +32,13 @@ export async function buildSessionResponse(
         comments
       )
     `,
-    )
-    .eq("session_id", session.session_id)
-    .order("position", { ascending: true });
+      )
+      .eq("session_id", session.session_id)
+      .order("position", { ascending: true }),
+    loadPlatformSettings(),
+  ]);
+
+  const { data: rows, error } = playlistResult;
 
   if (error) {
     throw new Error(`Failed to load session playlist: ${error.message}`);
@@ -86,5 +92,6 @@ export async function buildSessionResponse(
     current_position: session.current_position,
     status: session.status as SessionResponse["status"],
     playlist,
+    interest_prompt_reveal_fraction: settings.interestPromptRevealFraction,
   };
 }
