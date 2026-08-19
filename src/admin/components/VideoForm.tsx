@@ -356,6 +356,7 @@ export function VideoForm({ initialVideo, onSaved, onCancel }: VideoFormProps) {
                 <SelectContent>
                   <SelectItem value="micro_influencer">Micro influencer</SelectItem>
                   <SelectItem value="institutional">Institutional</SelectItem>
+                  <SelectItem value="control">Control</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -1,6 +1,22 @@
+import { SOURCE_TYPES, type SourceType } from "../../../shared/api/events.ts";
 import { db } from "../../db/client.ts";
-import type { Community, SourceType } from "../../db/tables.ts";
+import type { Community } from "../../db/tables.ts";
 import { rethrowDbError } from "../../lib/db-error.ts";
+
+export function emptySourceTypeCounts(): Record<SourceType, number> {
+  return Object.fromEntries(SOURCE_TYPES.map((type) => [type, 0])) as Record<
+    SourceType,
+    number
+  >;
+}
+
+export function pickLeastAssignedSourceType(
+  counts: Record<SourceType, number>,
+): SourceType {
+  const min = Math.min(...SOURCE_TYPES.map((type) => counts[type]));
+  const tied = SOURCE_TYPES.filter((type) => counts[type] === min);
+  return tied[Math.floor(Math.random() * tied.length)]!;
+}
 
 export async function assignSourceType(
   community: Community,
@@ -19,21 +35,10 @@ export async function assignSourceType(
     rethrowDbError(error);
   }
 
-  const counts: Record<SourceType, number> = {
-    micro_influencer: 0,
-    institutional: 0,
-  };
-
+  const counts = emptySourceTypeCounts();
   for (const row of data ?? []) {
     counts[row.source_type]++;
   }
 
-  if (counts.micro_influencer < counts.institutional) {
-    return "micro_influencer";
-  }
-  if (counts.institutional < counts.micro_influencer) {
-    return "institutional";
-  }
-
-  return Math.random() < 0.5 ? "micro_influencer" : "institutional";
+  return pickLeastAssignedSourceType(counts);
 }

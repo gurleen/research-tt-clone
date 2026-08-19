@@ -39,7 +39,7 @@ the layer that can actually guarantee them:
 ## Enums
 
 ```sql
-create type source_type as enum ('micro_influencer', 'institutional');
+create type source_type as enum ('micro_influencer', 'institutional', 'control');
 create type community   as enum ('armenian', 'sikh', 'iranian');
 create type video_type  as enum ('ingroup', 'filler');
 ```
@@ -441,7 +441,7 @@ events for a session, one section/table per event type, exact Section 8 field
 names. This is also the data dictionary deliverable.
 
 **Staging mode** — a deployment flag enabling an end-to-end walkthrough of each
-condition, including a `source_type` override so the researcher can force either
+condition, including a `source_type` override so the researcher can force any
 arm. The override is rejected in production.
 
 ---

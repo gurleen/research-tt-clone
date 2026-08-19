@@ -23,7 +23,11 @@ export type VideoViewEndedReason = (typeof VIDEO_VIEW_ENDED_REASONS)[number];
 export type EventName = (typeof EVENT_NAMES)[number];
 
 export const COMMUNITIES = ["armenian", "sikh", "iranian"] as const;
-export const SOURCE_TYPES = ["micro_influencer", "institutional"] as const;
+export const SOURCE_TYPES = [
+  "micro_influencer",
+  "institutional",
+  "control",
+] as const;
 export const VIDEO_TYPES = ["ingroup", "filler"] as const;
 
 export type Community = (typeof COMMUNITIES)[number];

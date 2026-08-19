@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { spacingImpossibleMessage } from "../../server/services/playlist/playlist-config-issues.ts";
-import { catalogCommentSchema } from "./schemas.ts";
+import { catalogCommentSchema, sourceTypeSchema } from "./schemas.ts";
 
 export const presignUploadBodySchema = z.object({
   video_id: z
@@ -36,7 +36,7 @@ export const videoFormSchema = z
     video_id: z.string().min(1),
     video_type: z.enum(["ingroup", "filler"]),
     community: z.enum(["armenian", "sikh", "iranian"]).nullable(),
-    source_type: z.enum(["micro_influencer", "institutional"]).nullable(),
+    source_type: sourceTypeSchema.nullable(),
     media_url: z.string().url(),
     profile_thumbnail_url: z.string().url(),
     account_name: z.string().min(1),
@@ -198,7 +198,7 @@ export const sessionStatusSchema = z.enum(SESSION_STATUSES);
 export const adminSessionListItemSchema = z.object({
   session_id: z.string().uuid(),
   community: communitySchema,
-  source_type: z.enum(["micro_influencer", "institutional"]),
+  source_type: sourceTypeSchema,
   status: z.string(),
   current_position: z.number().int().nonnegative(),
   assigned_at: z.string(),
@@ -206,7 +206,7 @@ export const adminSessionListItemSchema = z.object({
 
 export const adminSessionListQuerySchema = z.object({
   community: communitySchema.optional(),
-  source_type: z.enum(["micro_influencer", "institutional"]).optional(),
+  source_type: sourceTypeSchema.optional(),
   status: sessionStatusSchema.optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),

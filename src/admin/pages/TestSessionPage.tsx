@@ -2,7 +2,12 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { createPlatformClient } from "../../client/platform-api.ts";
 import { ApiError } from "../../client/errors.ts";
-import type { Community, SessionResponse, SourceType } from "../../shared/api/types.ts";
+import {
+  SOURCE_TYPES,
+  type Community,
+  type SessionResponse,
+  type SourceType,
+} from "../../shared/api/types.ts";
 import { getAdminConfig } from "../lib/supabase-browser.ts";
 import { Alert } from "../../components/ui/alert.tsx";
 import { Button } from "../../components/ui/button.tsx";
@@ -23,7 +28,6 @@ import {
 } from "../../components/ui/select.tsx";
 
 const COMMUNITIES: Community[] = ["armenian", "sikh", "iranian"];
-const SOURCE_TYPES: SourceType[] = ["micro_influencer", "institutional"];
 
 export function TestSessionPage() {
   const [community, setCommunity] = useState<Community>("sikh");

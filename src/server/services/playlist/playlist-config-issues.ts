@@ -1,4 +1,4 @@
-import type { SourceType } from "../../db/tables.ts";
+import { SOURCE_TYPES, type SourceType } from "../../../shared/api/events.ts";
 import {
   MIN_FILLERS_BETWEEN_INGROUP,
   minFillerCountForIngroupSpacing,
@@ -32,7 +32,12 @@ export type PlaylistConfigIssue = {
   message: string;
 };
 
-const SOURCE_TYPES: SourceType[] = ["micro_influencer", "institutional"];
+function emptyIngroupCounts(): Record<SourceType, number> {
+  return Object.fromEntries(SOURCE_TYPES.map((type) => [type, 0])) as Record<
+    SourceType,
+    number
+  >;
+}
 
 export function spacingImpossibleMessage(
   ingroupCountMax: number,
@@ -50,10 +55,7 @@ export function catalogCountsFromVideos(
   videos: PlaylistVideoCountRow[],
   community: string,
 ): PlaylistCatalogCounts {
-  const ingroup: Record<SourceType, number> = {
-    micro_influencer: 0,
-    institutional: 0,
-  };
+  const ingroup = emptyIngroupCounts();
   let filler = 0;
 
   for (const video of videos) {

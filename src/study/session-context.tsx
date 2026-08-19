@@ -11,11 +11,12 @@ import {
 import { useSearchParams } from "react-router";
 import { ApiError } from "../client/errors.ts";
 import type { PlatformApiClient } from "../client/platform-api.ts";
-import type {
-  Community,
-  CreateSessionBody,
-  SessionResponse,
-  SourceType,
+import {
+  SOURCE_TYPES,
+  type Community,
+  type CreateSessionBody,
+  type SessionResponse,
+  type SourceType,
 } from "../shared/api/types.ts";
 import type { StudyFeedVideo } from "../types/feed.ts";
 import { createStudyClient } from "./events.ts";
@@ -51,7 +52,7 @@ function isCommunity(value: string | null): value is Community {
 }
 
 function isSourceType(value: string | null): value is SourceType {
-  return value === "micro_influencer" || value === "institutional";
+  return SOURCE_TYPES.includes(value as SourceType);
 }
 
 function catalogErrorMessage(error: unknown, community?: string): string {

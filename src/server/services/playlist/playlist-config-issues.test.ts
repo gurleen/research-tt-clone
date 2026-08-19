@@ -12,6 +12,7 @@ const ampleCatalog: PlaylistCatalogCounts = {
   ingroup: {
     micro_influencer: 5,
     institutional: 5,
+    control: 5,
   },
 };
 
@@ -53,6 +54,11 @@ describe("catalogCountsFromVideos", () => {
         },
         {
           video_type: "ingroup",
+          community: "sikh",
+          source_type: "control",
+        },
+        {
+          video_type: "ingroup",
           community: "armenian",
           source_type: "micro_influencer",
         },
@@ -65,6 +71,7 @@ describe("catalogCountsFromVideos", () => {
       ingroup: {
         micro_influencer: 1,
         institutional: 1,
+        control: 1,
       },
     });
   });
@@ -131,6 +138,7 @@ describe("playlistConfigIssues", () => {
       ingroup: {
         micro_influencer: 5,
         institutional: 2,
+        control: 5,
       },
     });
 
@@ -139,6 +147,25 @@ describe("playlistConfigIssues", () => {
         kind: "catalog_ingroup",
         message:
           "Only 2 active institutional ingroup videos uploaded; ingroup count max is 4.",
+      },
+    ]);
+  });
+
+  test("flags a short control catalog", () => {
+    const issues = playlistConfigIssues(validCounts, {
+      ...ampleCatalog,
+      ingroup: {
+        micro_influencer: 5,
+        institutional: 5,
+        control: 1,
+      },
+    });
+
+    expect(issues).toEqual([
+      {
+        kind: "catalog_ingroup",
+        message:
+          "Only 1 active control ingroup video uploaded; ingroup count max is 4.",
       },
     ]);
   });

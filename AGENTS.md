@@ -6,11 +6,11 @@ Guidance for coding agents working in this repo.
 
 A **TikTok-style short-video feed** used as a research experiment (diaspora mobilization study). The UI copies TikTok *layout patterns* but must **not** use TikTok branding, logos, watermarks, or the cyan/red Create button.
 
-Participants open a recruitment link with `?community=armenian|sikh|iranian`. The server assigns a between-subjects `source_type` (`micro_influencer` or `institutional`), composes a **fixed playlist** of ingroup + filler videos, and logs behavioral events. Researchers manage the stimulus catalog and experiment knobs from `/admin`.
+Participants open a recruitment link with `?community=armenian|sikh|iranian`. The server assigns a between-subjects `source_type` (`micro_influencer`, `institutional`, or `control`), composes a **fixed playlist** of ingroup + filler videos, and logs behavioral events. Researchers manage the stimulus catalog and experiment knobs from `/admin`.
 
 Communities: `armenian`, `sikh`, `iranian`.  
 Video types: `ingroup` (condition-specific) and `filler` (shared).  
-Source types: `micro_influencer`, `institutional`.
+Source types: `micro_influencer`, `institutional`, `control`.
 
 ## Stack
 
