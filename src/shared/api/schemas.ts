@@ -8,6 +8,7 @@ import {
   VIDEO_TYPES,
   VIDEO_VIEW_ENDED_REASONS,
 } from "./events.ts";
+import { DEFAULT_INTEREST_PROMPT_REVEAL_FRACTION } from "../experiment/interest-prompt-timing.ts";
 
 const uuid = z.uuid();
 const isoTimestamp = z.iso.datetime({ offset: true });
@@ -66,6 +67,11 @@ export const sessionResponseSchema = z.object({
     "debriefed",
   ]),
   playlist: z.array(playlistItemSchema),
+  interest_prompt_reveal_fraction: z
+    .number()
+    .min(0)
+    .max(1)
+    .default(DEFAULT_INTEREST_PROMPT_REVEAL_FRACTION),
 });
 
 export const externalIdSchema = z

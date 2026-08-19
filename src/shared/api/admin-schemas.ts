@@ -147,7 +147,7 @@ export type ExperimentConfigFormValues = z.infer<
   typeof experimentConfigFormSchema
 >;
 
-export const PLATFORM_SETTING_KEYS = [
+export const HANDOFF_SETTING_KEYS = [
   "survey_url",
   "debrief_title",
   "debrief_body",
@@ -155,6 +155,17 @@ export const PLATFORM_SETTING_KEYS = [
   "debrief_contact",
 ] as const;
 
+export const EXPERIMENT_SETTING_KEYS = [
+  "interest_prompt_reveal_fraction",
+] as const;
+
+export const PLATFORM_SETTING_KEYS = [
+  ...HANDOFF_SETTING_KEYS,
+  ...EXPERIMENT_SETTING_KEYS,
+] as const;
+
+export type HandoffSettingKey = (typeof HANDOFF_SETTING_KEYS)[number];
+export type ExperimentSettingKey = (typeof EXPERIMENT_SETTING_KEYS)[number];
 export type PlatformSettingKey = (typeof PLATFORM_SETTING_KEYS)[number];
 
 const nonEmptyTrimmedString = z
@@ -175,6 +186,14 @@ export const platformSettingsFormSchema = z.object({
 
 export type PlatformSettingsFormValues = z.infer<
   typeof platformSettingsFormSchema
+>;
+
+export const interestPromptTimingFormSchema = z.object({
+  interest_prompt_reveal_percent: z.number().min(0).max(100),
+});
+
+export type InterestPromptTimingFormValues = z.infer<
+  typeof interestPromptTimingFormSchema
 >;
 
 const sessionEventTableSchema = z.enum([

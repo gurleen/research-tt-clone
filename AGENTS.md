@@ -96,7 +96,7 @@ Feed is **mobile-only** (~390×844). Desktop is a centered phone frame, not a de
 | Topic / see-more overlay | `src/components/study/InterestPrompt.tsx` |
 | Click logging before stub open | `postEventBeacon` in `src/study/events.ts` (must fire *before* UI opens) |
 
-Ingroup videos get `show_learn_more` (stub link). Stimulus videos (ingroup or control) may get a topic overlay via `show_interest_prompt`, with at least one per session. Fillers may get a “see more of this content” overlay with Yes/No/Maybe. Prompt answers are logged and **must not** change the playlist. The overlay appears after a short delay (`INTEREST_PROMPT_DELAY_MS`).
+Ingroup videos get `show_learn_more` (stub link). Stimulus videos (ingroup or control) may get a topic overlay via `show_interest_prompt`, with at least one per session. Fillers may get a “see more of this content” overlay with Yes/No/Maybe. Prompt answers are logged and **must not** change the playlist. The overlay appears after a configurable fraction of the video (`interest_prompt_reveal_fraction`, default 0.3 / 30%). Set it globally on `/admin/experiment-config`.
 
 ### Server: sessions, playlist, events
 
@@ -123,7 +123,7 @@ Ingroup videos get `show_learn_more` (stub link). Stimulus videos (ingroup or co
 | Dashboard | `/admin` | `src/admin/pages/DashboardPage.tsx` |
 | Stimulus catalog | `/admin/videos` | `VideosPage.tsx`, `VideoForm.tsx` |
 | Stub copy per community | `/admin/stub-content` | `StubContentPage.tsx` |
-| Playlist counts / prompt rules | `/admin/experiment-config` | `ExperimentConfigPage.tsx` |
+| Playlist counts / prompt rules / global prompt timing | `/admin/experiment-config` | `ExperimentConfigPage.tsx` |
 | Survey URL + debrief | `/admin/handoff-settings` | `HandoffSettingsPage.tsx` |
 | Forced walkthrough | `/admin/test-session` | `TestSessionPage.tsx` |
 | Session list | `/admin/sessions` | `SessionsPage.tsx` |

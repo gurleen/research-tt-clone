@@ -7,6 +7,7 @@ import {
   deactivateVideoResponseSchema,
   experimentConfigFormSchema,
   platformSettingsFormSchema,
+  interestPromptTimingFormSchema,
   presignUploadBodySchema,
   reactivateVideoResponseSchema,
   stubContentFormSchema,
@@ -383,6 +384,24 @@ describe("admin schemas", () => {
       debrief_contact: "research@example.com",
     });
     expect(parsed.success).toBe(true);
+  });
+
+  test("interestPromptTimingFormSchema accepts 0-100 percent", () => {
+    expect(
+      interestPromptTimingFormSchema.parse({
+        interest_prompt_reveal_percent: 30,
+      }).interest_prompt_reveal_percent,
+    ).toBe(30);
+    expect(
+      interestPromptTimingFormSchema.safeParse({
+        interest_prompt_reveal_percent: -1,
+      }).success,
+    ).toBe(false);
+    expect(
+      interestPromptTimingFormSchema.safeParse({
+        interest_prompt_reveal_percent: 101,
+      }).success,
+    ).toBe(false);
   });
 });
 

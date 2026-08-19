@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Tables } from "../../server/db/database.types.ts";
-import { PLATFORM_SETTING_KEYS } from "../../shared/api/admin-schemas.ts";
+import { HANDOFF_SETTING_KEYS } from "../../shared/api/admin-schemas.ts";
 import { useAdminAuth } from "../auth/AdminAuthProvider.tsx";
 import { HandoffSettingsForm } from "../components/HandoffSettingsForm.tsx";
 import { Alert } from "../../components/ui/alert.tsx";
@@ -22,7 +22,7 @@ export function HandoffSettingsPage() {
     const { data, error: queryError } = await client
       .from("platform_settings")
       .select("*")
-      .in("key", [...PLATFORM_SETTING_KEYS])
+      .in("key", [...HANDOFF_SETTING_KEYS])
       .order("key", { ascending: true });
 
     if (queryError) {
@@ -45,7 +45,7 @@ export function HandoffSettingsPage() {
       for (const row of updatedRows) {
         byKey.set(row.key, row);
       }
-      return PLATFORM_SETTING_KEYS.map(
+      return HANDOFF_SETTING_KEYS.map(
         (key) => byKey.get(key)!,
       ).filter(Boolean);
     });

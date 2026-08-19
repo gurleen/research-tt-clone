@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import type { Tables } from "../../server/db/database.types.ts";
 import {
-  PLATFORM_SETTING_KEYS,
+  HANDOFF_SETTING_KEYS,
   platformSettingsFormSchema,
   type PlatformSettingsFormValues,
 } from "../../shared/api/admin-schemas.ts";
@@ -82,7 +82,7 @@ export function HandoffSettingsForm({ rows, onSaved }: HandoffSettingsFormProps)
     setSubmitting(true);
 
     const updates = await Promise.all(
-      PLATFORM_SETTING_KEYS.map((key) =>
+      HANDOFF_SETTING_KEYS.map((key) =>
         client
           .from("platform_settings")
           .update({ value: parsed.data[key] })

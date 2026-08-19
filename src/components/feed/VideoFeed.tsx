@@ -135,6 +135,9 @@ export function VideoFeed() {
               touchEnabled={isTouchDevice}
               sessionId={session?.session_id}
               client={client}
+              interestPromptRevealFraction={
+                session?.interest_prompt_reveal_fraction
+              }
               onToggleLike={() => handleToggleLike(video.video_id)}
               onDoubleTapLike={() => handleDoubleTapLike(video.video_id)}
               onSwipeUp={goNext}
