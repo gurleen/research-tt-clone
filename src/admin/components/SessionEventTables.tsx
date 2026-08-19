@@ -128,8 +128,10 @@ const EVENT_TABLE_COLUMNS: Record<EventTableName, Column[]> = {
       header: "Answer",
       render: (row) => {
         const value = row.response;
-        if (typeof value !== "boolean") return "—";
-        return value ? "Yes" : "No";
+        if (value === "yes") return "Yes";
+        if (value === "no") return "No";
+        if (value === "maybe") return "Maybe";
+        return "—";
       },
     },
     {

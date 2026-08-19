@@ -4,6 +4,7 @@ export type {
   EventTableName,
   SourceType,
   TreatmentSourceType,
+  InterestResponse,
   VideoType,
   VideoViewEndedReason,
 } from "./events.ts";
@@ -29,6 +30,7 @@ export {
   COMMUNITIES,
   EVENT_NAMES,
   EVENT_TO_TABLE,
+  INTEREST_RESPONSES,
   SESSION_ONLY_EVENTS,
   SOURCE_TYPES,
   TREATMENT_SOURCE_TYPES,
@@ -44,6 +46,7 @@ export {
   debriefResponseSchema,
   eventBodySchema,
   exportFormatSchema,
+  interestResponseSchema,
   parseCatalogComments,
   patchPositionBodySchema,
   patchPositionResponseSchema,

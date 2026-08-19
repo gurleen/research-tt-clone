@@ -101,8 +101,8 @@ create table experiment_config (
   ingroup_count_max    integer not null,
   filler_count_min     integer not null,
   filler_count_max     integer not null,
-  prompt_probability   numeric not null default 0.45,  -- chance a filler carries the prompt
-  prompt_min_spacing   integer not null default 1,     -- min fillers between two prompts
+  prompt_probability   numeric not null default 0.45,  -- chance each pool item carries a prompt
+  prompt_min_spacing   integer not null default 1,     -- min same-pool videos between two prompts
   updated_at           timestamptz not null default now(),
   constraint sane_counts check (
     ingroup_count_min <= ingroup_count_max
@@ -150,7 +150,7 @@ create table session_videos (
   session_id           uuid    not null references sessions(session_id),
   position             integer not null,    -- 0-based order within the session
   video_id             text    not null references videos(video_id),
-  show_interest_prompt boolean not null default false,  -- realized prompt subset (filler only)
+  show_interest_prompt boolean not null default false,  -- realized overlay subset (stimulus + filler)
   primary key (session_id, position),
   unique (session_id, video_id)
 );
@@ -229,7 +229,7 @@ create table evt_interest_response (
   video_type         video_type  not null,
   source_type        source_type not null,
   community          community   not null,
-  response           boolean     not null,  -- true = Yes, false = No
+  response           text        not null check (response in ('yes','no','maybe')),
   timestamp_response timestamptz not null,
   latency_ms         integer     not null,  -- timestamp_response − prompt timestamp_display
   server_received_at timestamptz not null default now()
@@ -408,7 +408,7 @@ isn't an ingroup video (filler has no stub).
   - `content_link_click` → `video_id, timestamp_click, latency_ms`
   - `content_stub_exit` → `video_id, timestamp_exit, time_on_stub_ms`
   - `interest_prompt_display` → `video_id, timestamp_display`
-  - `interest_response` → `video_id, response, timestamp_response, latency_ms`
+  - `interest_response` → `video_id, response ('yes'|'no'|'maybe'), timestamp_response, latency_ms`
   - `playlist_complete` → `timestamp`
   - `survey_complete` → `timestamp`
 
@@ -468,7 +468,7 @@ arm. The override is rejected in production.
 | Stub body constant, attribution-only difference | `stub_content` keyed by community; attribution from video |
 | Stub has no other affordances | Stub endpoint returns body + attribution + nothing else |
 | Interest prompt non-adaptive | Controller never reads responses; playlist fixed |
-| Intermittent prompt placement | `show_interest_prompt` subset set once at creation |
+| Intermittent prompt placement | `show_interest_prompt` subset set once at creation; stimulus pool guaranteed ≥1 |
 | Refresh without re-randomizing / double-logging | `GET /sessions/:id` replays; `event_id` idempotency |
 | Encrypted at rest, restricted access | Storage layer (encrypted volume / managed PG) + DB roles |
 
@@ -481,8 +481,12 @@ Settled:
   ranges; the composer picks within them per session. Set min = max for a fixed
   count.
 - **Prompt rule** — the ~45% / min-spacing-1 default ships as `experiment_config`
-  defaults; researchers can change `prompt_probability` and `prompt_min_spacing`
-  per community without a deploy.
+  defaults and is applied independently to the stimulus pool (ingroup or
+  control) and the filler pool. Stimulus is guaranteed at least one topic
+  prompt per session. Copy is derived from `video_type`: topic Yes/No on
+  stimulus, “see more of this content” Yes/No/Maybe on fillers. Researchers
+  can change `prompt_probability` and `prompt_min_spacing` per community
+  without a deploy.
 - **No purge** — data is retained indefinitely; there's no scheduled purge job.
   Export is read-only.
 - **`session_start`** — stays its own table so per-start data can be attached

@@ -86,7 +86,11 @@ export function SessionPlaylistCard({
                           <Badge variant="secondary">Learn more</Badge>
                         ) : null}
                         {item.show_interest_prompt ? (
-                          <Badge variant="secondary">Interest prompt</Badge>
+                          <Badge variant="secondary">
+                            {item.video_type === "filler"
+                              ? "See more prompt"
+                              : "Topic prompt"}
+                          </Badge>
                         ) : null}
                         {!item.show_learn_more && !item.show_interest_prompt
                           ? "—"

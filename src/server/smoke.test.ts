@@ -17,6 +17,34 @@ describe("shared API schemas", () => {
     expect(parsed.success).toBe(false);
   });
 
+  test("eventBodySchema accepts interest_response yes/no/maybe", () => {
+    for (const response of ["yes", "no", "maybe"] as const) {
+      const parsed = eventBodySchema.safeParse({
+        event_id: "550e8400-e29b-41d4-a716-446655440000",
+        session_id: "550e8400-e29b-41d4-a716-446655440001",
+        event: "interest_response",
+        video_id: "ingroup_01",
+        response,
+        timestamp_response: "2026-08-18T12:00:00.000Z",
+        latency_ms: 400,
+      });
+      expect(parsed.success).toBe(true);
+    }
+  });
+
+  test("eventBodySchema rejects boolean interest_response", () => {
+    const parsed = eventBodySchema.safeParse({
+      event_id: "550e8400-e29b-41d4-a716-446655440000",
+      session_id: "550e8400-e29b-41d4-a716-446655440001",
+      event: "interest_response",
+      video_id: "ingroup_01",
+      response: true,
+      timestamp_response: "2026-08-18T12:00:00.000Z",
+      latency_ms: 400,
+    });
+    expect(parsed.success).toBe(false);
+  });
+
   test("eventBodySchema accepts playlist_complete payload", () => {
     const parsed = eventBodySchema.safeParse({
       event_id: "550e8400-e29b-41d4-a716-446655440000",

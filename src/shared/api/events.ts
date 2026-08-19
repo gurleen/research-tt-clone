@@ -29,11 +29,13 @@ export const TREATMENT_SOURCE_TYPES = [
 ] as const;
 export const SOURCE_TYPES = [...TREATMENT_SOURCE_TYPES, "control"] as const;
 export const VIDEO_TYPES = ["ingroup", "filler", "control"] as const;
+export const INTEREST_RESPONSES = ["yes", "no", "maybe"] as const;
 
 export type Community = (typeof COMMUNITIES)[number];
 export type SourceType = (typeof SOURCE_TYPES)[number];
 export type TreatmentSourceType = (typeof TREATMENT_SOURCE_TYPES)[number];
 export type VideoType = (typeof VIDEO_TYPES)[number];
+export type InterestResponse = (typeof INTEREST_RESPONSES)[number];
 
 export type EventTableName =
   | "evt_content_link_display"

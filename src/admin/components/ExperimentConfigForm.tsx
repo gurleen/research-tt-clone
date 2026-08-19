@@ -119,9 +119,12 @@ export function ExperimentConfigForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <p className="text-sm text-zinc-600">
-        Playlist counts and interest-prompt rules used when creating new
-        sessions. Set min = max for a fixed count. Consecutive ingroup videos
-        always have at least 2 fillers between them.
+        Playlist counts and prompt rules used when creating new sessions.
+        Set min = max for a fixed count. Consecutive ingroup videos always
+        have at least 2 fillers between them. Prompt probability and spacing
+        apply independently to stimulus videos (ingroup or control) and to
+        fillers. Every new session gets at least one topic prompt on a
+        stimulus video.
       </p>
 
       {error && <Alert variant="destructive">{error}</Alert>}
@@ -193,6 +196,10 @@ export function ExperimentConfigForm({
           <Label htmlFor={`${row.community}-prompt-prob`}>
             Prompt probability
           </Label>
+          <p className="text-xs text-zinc-500">
+            Chance each eligible video gets a popup, rolled separately for
+            stimulus and filler pools.
+          </p>
           <Input
             id={`${row.community}-prompt-prob`}
             type="number"
@@ -209,6 +216,10 @@ export function ExperimentConfigForm({
           <Label htmlFor={`${row.community}-prompt-spacing`}>
             Prompt min spacing
           </Label>
+          <p className="text-xs text-zinc-500">
+            Minimum same-pool videos between two popups. Stimulus still gets
+            at least one topic prompt per session.
+          </p>
           <Input
             id={`${row.community}-prompt-spacing`}
             type="number"

@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   COMMUNITIES,
   EVENT_NAMES,
+  INTEREST_RESPONSES,
   SOURCE_TYPES,
   TREATMENT_SOURCE_TYPES,
   VIDEO_TYPES,
@@ -15,6 +16,7 @@ export const communitySchema = z.enum(COMMUNITIES);
 export const sourceTypeSchema = z.enum(SOURCE_TYPES);
 export const treatmentSourceTypeSchema = z.enum(TREATMENT_SOURCE_TYPES);
 export const videoTypeSchema = z.enum(VIDEO_TYPES);
+export const interestResponseSchema = z.enum(INTEREST_RESPONSES);
 
 export const attributionSchema = z.object({
   account_name: z.string(),
@@ -146,7 +148,7 @@ export const interestPromptDisplayEventSchema = eventBaseSchema.extend({
 export const interestResponseEventSchema = eventBaseSchema.extend({
   event: z.literal("interest_response"),
   video_id: z.string(),
-  response: z.boolean(),
+  response: interestResponseSchema,
   timestamp_response: isoTimestamp,
   latency_ms: z.number().int().nonnegative(),
 });

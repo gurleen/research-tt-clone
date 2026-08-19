@@ -8,6 +8,8 @@ import { InterestPrompt } from "../study/InterestPrompt.tsx";
 import type { PlatformApiClient } from "../../client/platform-api.ts";
 import type { StudyFeedVideo } from "../../types/feed";
 
+export const INTEREST_PROMPT_DELAY_MS = 3000;
+
 type VideoOverlayProps = {
   video: StudyFeedVideo;
   isActive: boolean;
@@ -45,11 +47,23 @@ export function VideoOverlay({
 }: VideoOverlayProps) {
   const [userPaused, setUserPaused] = useState(false);
   const [promptDismissed, setPromptDismissed] = useState(false);
+  const [promptReady, setPromptReady] = useState(false);
 
   useEffect(() => {
     setUserPaused(false);
     setPromptDismissed(false);
-  }, [video.id, isActive]);
+    setPromptReady(false);
+
+    if (!isActive || !video.show_interest_prompt) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setPromptReady(true);
+    }, INTEREST_PROMPT_DELAY_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [video.id, isActive, video.show_interest_prompt]);
 
   const handleTogglePlay = useCallback(() => {
     let nowPaused = false;
@@ -63,6 +77,7 @@ export function VideoOverlay({
   const showPrompt =
     isActive &&
     video.show_interest_prompt &&
+    promptReady &&
     sessionId &&
     client &&
     !promptDismissed;
@@ -104,6 +119,7 @@ export function VideoOverlay({
         <InterestPrompt
           sessionId={sessionId}
           videoId={video.video_id}
+          videoType={video.video_type}
           client={client}
           onDismiss={() => setPromptDismissed(true)}
         />

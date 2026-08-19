@@ -93,10 +93,10 @@ Feed is **mobile-only** (~390×844). Desktop is a centered phone frame, not a de
 | “Learn more” on ingroup videos | `src/components/study/LearnMoreLink.tsx` |
 | Stub overlay in the feed | `src/components/study/StubSheet.tsx` + `StubContent.tsx` |
 | Full-page stub (legacy `/stub`) | `src/pages/StubPage.tsx` |
-| Intermittent Yes/No prompt on fillers | `src/components/study/InterestPrompt.tsx` |
+| Topic / see-more overlay | `src/components/study/InterestPrompt.tsx` |
 | Click logging before stub open | `postEventBeacon` in `src/study/events.ts` (must fire *before* UI opens) |
 
-Ingroup videos get `show_learn_more`. Fillers may get `show_interest_prompt`. Control videos get neither. Prompt answers are logged and **must not** change the playlist.
+Ingroup videos get `show_learn_more` (stub link). Stimulus videos (ingroup or control) may get a topic overlay via `show_interest_prompt`, with at least one per session. Fillers may get a “see more of this content” overlay with Yes/No/Maybe. Prompt answers are logged and **must not** change the playlist. The overlay appears after a short delay (`INTEREST_PROMPT_DELAY_MS`).
 
 ### Server: sessions, playlist, events
 
@@ -105,7 +105,7 @@ Ingroup videos get `show_learn_more`. Fillers may get `show_interest_prompt`. Co
 | Create session + balanced randomization | `src/server/services/sessions/create-session.ts`, `…/randomization/assign-source-type.ts` |
 | Playlist composition | `src/server/services/playlist/compose-playlist.ts` |
 | Ingroup or control interleaved with fillers (min 2 fillers between consecutive stimulus videos) | `shuffle-ingroup-filler.ts` |
-| Prompt probability / min-spacing | `place-prompts.ts` |
+| Prompt probability / min-spacing (stimulus + filler pools) | `place-prompts.ts` |
 | Resume pointer (monotonic) | `advance-position.ts` |
 | Session JSON for the client | `build-session-response.ts` |
 | Stub body (community-constant copy) | `get-stub.ts` |

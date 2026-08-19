@@ -310,7 +310,7 @@ export type Database = {
           community: Database["public"]["Enums"]["community"];
           event_id: string;
           latency_ms: number;
-          response: boolean;
+          response: string;
           server_received_at: string;
           session_id: string;
           source_type: Database["public"]["Enums"]["source_type"];
@@ -322,7 +322,7 @@ export type Database = {
           community: Database["public"]["Enums"]["community"];
           event_id: string;
           latency_ms: number;
-          response: boolean;
+          response: string;
           server_received_at?: string;
           session_id: string;
           source_type: Database["public"]["Enums"]["source_type"];
@@ -334,7 +334,7 @@ export type Database = {
           community?: Database["public"]["Enums"]["community"];
           event_id?: string;
           latency_ms?: number;
-          response?: boolean;
+          response?: string;
           server_received_at?: string;
           session_id?: string;
           source_type?: Database["public"]["Enums"]["source_type"];
