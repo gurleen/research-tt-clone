@@ -1,5 +1,3 @@
-import { DEFAULT_INTEREST_PROMPT_REVEAL_FRACTION } from "../../shared/experiment/interest-prompt-timing.ts";
-
 function requiredOne(...names: string[]): string {
   for (const name of names) {
     const value = process.env[name];
@@ -62,7 +60,7 @@ export const envFallbackSettings = {
     ),
     contact: optional("DEBRIEF_CONTACT", "research@example.com"),
   },
-  interestPromptRevealFraction: DEFAULT_INTEREST_PROMPT_REVEAL_FRACTION,
+  interestPromptRevealFraction: 0.3,
 } as const;
 
 export function buildDebriefUrl(sessionId: string, origin: string): string {
