@@ -1,6 +1,7 @@
 import { db } from "../../db/client.ts";
 import { parseCatalogComments } from "../../../shared/api/schemas.ts";
 import type { SessionResponse } from "../../../shared/api/types.ts";
+import type { VideoType } from "../../../shared/api/events.ts";
 import type { SessionRow } from "../../db/tables.ts";
 
 export async function buildSessionResponse(
@@ -41,7 +42,7 @@ export async function buildSessionResponse(
     const videoRaw = row.videos;
   const video = (Array.isArray(videoRaw) ? videoRaw[0] : videoRaw) as {
       video_id: string;
-      video_type: "ingroup" | "filler";
+      video_type: VideoType;
       media_url: string;
       duration_ms: number | null;
       account_name: string;

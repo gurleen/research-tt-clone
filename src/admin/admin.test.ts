@@ -227,6 +227,34 @@ describe("admin schemas", () => {
     }
   });
 
+  test("videoFormSchema accepts control without condition fields", () => {
+    const parsed = videoFormSchema.safeParse({
+      video_id: "control_01",
+      video_type: "control",
+      community: null,
+      source_type: null,
+      media_url: "https://example.com/a.webm",
+      profile_thumbnail_url: "https://example.com/t.jpg",
+      account_name: "Creator",
+      account_handle: "@creator",
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  test("videoFormSchema rejects control with a community", () => {
+    const parsed = videoFormSchema.safeParse({
+      video_id: "control_01",
+      video_type: "control",
+      community: "sikh",
+      source_type: null,
+      media_url: "https://example.com/a.webm",
+      profile_thumbnail_url: "https://example.com/t.jpg",
+      account_name: "Creator",
+      account_handle: "@creator",
+    });
+    expect(parsed.success).toBe(false);
+  });
+
   test("videoFormSchema accepts caption, counts, and comments", () => {
     const parsed = videoFormSchema.parse({
       video_id: "filler_01",

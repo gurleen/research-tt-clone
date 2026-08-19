@@ -9,10 +9,10 @@ import {
 
 const ampleCatalog: PlaylistCatalogCounts = {
   filler: 10,
+  control: 5,
   ingroup: {
     micro_influencer: 5,
     institutional: 5,
-    control: 5,
   },
 };
 
@@ -53,9 +53,9 @@ describe("catalogCountsFromVideos", () => {
           source_type: "institutional",
         },
         {
-          video_type: "ingroup",
-          community: "sikh",
-          source_type: "control",
+          video_type: "control",
+          community: null,
+          source_type: null,
         },
         {
           video_type: "ingroup",
@@ -68,10 +68,10 @@ describe("catalogCountsFromVideos", () => {
 
     expect(counts).toEqual({
       filler: 2,
+      control: 1,
       ingroup: {
         micro_influencer: 1,
         institutional: 1,
-        control: 1,
       },
     });
   });
@@ -138,7 +138,6 @@ describe("playlistConfigIssues", () => {
       ingroup: {
         micro_influencer: 5,
         institutional: 2,
-        control: 5,
       },
     });
 
@@ -154,18 +153,14 @@ describe("playlistConfigIssues", () => {
   test("flags a short control catalog", () => {
     const issues = playlistConfigIssues(validCounts, {
       ...ampleCatalog,
-      ingroup: {
-        micro_influencer: 5,
-        institutional: 5,
-        control: 1,
-      },
+      control: 1,
     });
 
     expect(issues).toEqual([
       {
-        kind: "catalog_ingroup",
+        kind: "catalog_control",
         message:
-          "Only 1 active control ingroup video uploaded; ingroup count max is 4.",
+          "Only 1 active control video uploaded; ingroup count max is 4.",
       },
     ]);
   });

@@ -1,3 +1,5 @@
+import type { VideoType } from "../shared/api/events.ts";
+
 export type FeedComment = {
   id: string;
   username: string;
@@ -27,7 +29,7 @@ export type FeedVideo = {
 export type StudyFeedVideo = FeedVideo & {
   position: number;
   video_id: string;
-  video_type: "ingroup" | "filler";
+  video_type: VideoType;
   show_learn_more: boolean;
   show_interest_prompt: boolean;
 };

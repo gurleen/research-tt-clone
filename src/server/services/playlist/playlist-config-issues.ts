@@ -1,4 +1,8 @@
-import { SOURCE_TYPES, type SourceType } from "../../../shared/api/events.ts";
+import {
+  TREATMENT_SOURCE_TYPES,
+  type TreatmentSourceType,
+  type VideoType,
+} from "../../../shared/api/events.ts";
 import {
   MIN_FILLERS_BETWEEN_INGROUP,
   minFillerCountForIngroupSpacing,
@@ -13,18 +17,20 @@ export type PlaylistCountSettings = {
 
 export type PlaylistCatalogCounts = {
   filler: number;
-  ingroup: Record<SourceType, number>;
+  control: number;
+  ingroup: Record<TreatmentSourceType, number>;
 };
 
 export type PlaylistVideoCountRow = {
-  video_type: "ingroup" | "filler";
+  video_type: VideoType;
   community: string | null;
-  source_type: SourceType | null;
+  source_type: TreatmentSourceType | "control" | null;
 };
 
 export type PlaylistConfigIssueKind =
   | "spacing"
   | "catalog_filler"
+  | "catalog_control"
   | "catalog_ingroup";
 
 export type PlaylistConfigIssue = {
@@ -32,11 +38,16 @@ export type PlaylistConfigIssue = {
   message: string;
 };
 
-function emptyIngroupCounts(): Record<SourceType, number> {
-  return Object.fromEntries(SOURCE_TYPES.map((type) => [type, 0])) as Record<
-    SourceType,
-    number
-  >;
+function emptyIngroupCounts(): Record<TreatmentSourceType, number> {
+  return Object.fromEntries(
+    TREATMENT_SOURCE_TYPES.map((type) => [type, 0]),
+  ) as Record<TreatmentSourceType, number>;
+}
+
+function isTreatmentSourceType(
+  value: string | null,
+): value is TreatmentSourceType {
+  return TREATMENT_SOURCE_TYPES.includes(value as TreatmentSourceType);
 }
 
 export function spacingImpossibleMessage(
@@ -57,6 +68,7 @@ export function catalogCountsFromVideos(
 ): PlaylistCatalogCounts {
   const ingroup = emptyIngroupCounts();
   let filler = 0;
+  let control = 0;
 
   for (const video of videos) {
     if (video.video_type === "filler") {
@@ -64,14 +76,19 @@ export function catalogCountsFromVideos(
       continue;
     }
 
-    if (video.community !== community || video.source_type == null) {
+    if (video.video_type === "control") {
+      control += 1;
+      continue;
+    }
+
+    if (video.community !== community || !isTreatmentSourceType(video.source_type)) {
       continue;
     }
 
     ingroup[video.source_type] += 1;
   }
 
-  return { filler, ingroup };
+  return { filler, control, ingroup };
 }
 
 function pluralVideos(count: number): string {
@@ -108,7 +125,14 @@ export function playlistConfigIssues(
     });
   }
 
-  for (const sourceType of SOURCE_TYPES) {
+  if (catalog.control < settings.ingroup_count_max) {
+    issues.push({
+      kind: "catalog_control",
+      message: `Only ${catalog.control} active control ${pluralVideos(catalog.control)} uploaded; ingroup count max is ${settings.ingroup_count_max}.`,
+    });
+  }
+
+  for (const sourceType of TREATMENT_SOURCE_TYPES) {
     const available = catalog.ingroup[sourceType];
     if (available >= settings.ingroup_count_max) {
       continue;

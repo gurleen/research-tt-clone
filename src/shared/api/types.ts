@@ -3,6 +3,7 @@ export type {
   EventName,
   EventTableName,
   SourceType,
+  TreatmentSourceType,
   VideoType,
   VideoViewEndedReason,
 } from "./events.ts";
@@ -30,6 +31,7 @@ export {
   EVENT_TO_TABLE,
   SESSION_ONLY_EVENTS,
   SOURCE_TYPES,
+  TREATMENT_SOURCE_TYPES,
   VIDEO_EVENTS,
   VIDEO_TYPES,
   VIDEO_VIEW_ENDED_REASONS,

@@ -1,7 +1,8 @@
+import type { VideoType } from "../../../shared/api/events.ts";
+import type { AdminSessionPlaylistItem } from "../../../shared/api/admin-schemas.ts";
 import { db } from "../../db/client.ts";
 import { ApiError } from "../../lib/http.ts";
 import type { SessionRow } from "../../db/tables.ts";
-import type { AdminSessionPlaylistItem } from "../../../shared/api/admin-schemas.ts";
 import {
   countSessionEvents,
   loadSessionEvents,
@@ -9,7 +10,7 @@ import {
 
 type PlaylistVideo = {
   video_id: string;
-  video_type: "ingroup" | "filler";
+  video_type: VideoType;
   account_name: string;
   account_handle: string;
 };

@@ -1,8 +1,9 @@
+import type { VideoType } from "../../../shared/api/events.ts";
 import type { ExperimentConfigRow } from "../../db/tables.ts";
 
 export type PlaylistSlot = {
   video_id: string;
-  video_type: "ingroup" | "filler";
+  video_type: VideoType;
   show_interest_prompt: boolean;
 };
 

@@ -23,15 +23,16 @@ export type VideoViewEndedReason = (typeof VIDEO_VIEW_ENDED_REASONS)[number];
 export type EventName = (typeof EVENT_NAMES)[number];
 
 export const COMMUNITIES = ["armenian", "sikh", "iranian"] as const;
-export const SOURCE_TYPES = [
+export const TREATMENT_SOURCE_TYPES = [
   "micro_influencer",
   "institutional",
-  "control",
 ] as const;
-export const VIDEO_TYPES = ["ingroup", "filler"] as const;
+export const SOURCE_TYPES = [...TREATMENT_SOURCE_TYPES, "control"] as const;
+export const VIDEO_TYPES = ["ingroup", "filler", "control"] as const;
 
 export type Community = (typeof COMMUNITIES)[number];
 export type SourceType = (typeof SOURCE_TYPES)[number];
+export type TreatmentSourceType = (typeof TREATMENT_SOURCE_TYPES)[number];
 export type VideoType = (typeof VIDEO_TYPES)[number];
 
 export type EventTableName =

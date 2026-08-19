@@ -12,6 +12,6 @@ describe("composePlaylistSlots", () => {
       new URL("./compose-playlist.ts", import.meta.url),
       "utf8",
     );
-    expect(source.match(/\.eq\("active", true\)/g)?.length).toBe(2);
+    expect(source.match(/\.eq\("active", true\)/g)?.length).toBe(3);
   });
 });

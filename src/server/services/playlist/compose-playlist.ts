@@ -33,11 +33,11 @@ export async function composePlaylistSlots(
     );
   }
 
-  const ingroupCount = randomIntInclusive(
+  const stimulusCount = randomIntInclusive(
     config.ingroup_count_min,
     config.ingroup_count_max,
   );
-  const minFillerForSpacing = minFillerCountForIngroupSpacing(ingroupCount);
+  const minFillerForSpacing = minFillerCountForIngroupSpacing(stimulusCount);
   const fillerCount = Math.max(
     randomIntInclusive(config.filler_count_min, config.filler_count_max),
     minFillerForSpacing,
@@ -46,20 +46,31 @@ export async function composePlaylistSlots(
   if (fillerCount > config.filler_count_max) {
     throw new ApiError(
       503,
-      `Experiment config cannot satisfy ingroup spacing: need at least ${minFillerForSpacing} filler videos for ${ingroupCount} ingroup, but filler_count_max is ${config.filler_count_max}`,
+      `Experiment config cannot satisfy ingroup spacing: need at least ${minFillerForSpacing} filler videos for ${stimulusCount} ingroup, but filler_count_max is ${config.filler_count_max}`,
     );
   }
 
-  const { data: ingroupPool, error: ingroupError } = await db
-    .from("videos")
-    .select("*")
-    .eq("video_type", "ingroup")
-    .eq("community", community)
-    .eq("source_type", sourceType)
-    .eq("active", true);
+  const isControl = sourceType === "control";
+  const stimulusQuery = isControl
+    ? db
+        .from("videos")
+        .select("*")
+        .eq("video_type", "control")
+        .eq("active", true)
+    : db
+        .from("videos")
+        .select("*")
+        .eq("video_type", "ingroup")
+        .eq("community", community)
+        .eq("source_type", sourceType)
+        .eq("active", true);
 
-  if (ingroupError) {
-    throw new Error(`Failed to load ingroup videos: ${ingroupError.message}`);
+  const { data: stimulusPool, error: stimulusError } = await stimulusQuery;
+
+  if (stimulusError) {
+    throw new Error(
+      `Failed to load ${isControl ? "control" : "ingroup"} videos: ${stimulusError.message}`,
+    );
   }
 
   const { data: fillerPool, error: fillerError } = await db
@@ -72,21 +83,26 @@ export async function composePlaylistSlots(
     throw new Error(`Failed to load filler videos: ${fillerError.message}`);
   }
 
-  if ((ingroupPool?.length ?? 0) < ingroupCount) {
+  if ((stimulusPool?.length ?? 0) < stimulusCount) {
     throw new ApiError(
       503,
-      `Not enough ingroup videos for ${community}/${sourceType}`,
+      isControl
+        ? "Not enough control videos in catalog"
+        : `Not enough ingroup videos for ${community}/${sourceType}`,
     );
   }
   if ((fillerPool?.length ?? 0) < fillerCount) {
     throw new ApiError(503, "Not enough filler videos in catalog");
   }
 
-  const selectedIngroup = sampleWithoutReplacement(ingroupPool!, ingroupCount);
+  const selectedStimulus = sampleWithoutReplacement(
+    stimulusPool!,
+    stimulusCount,
+  );
   const selectedFiller = sampleWithoutReplacement(fillerPool!, fillerCount);
 
   const slots = placePrompts(
-    shuffleIngroupIntoFiller(selectedIngroup, selectedFiller),
+    shuffleIngroupIntoFiller(selectedStimulus, selectedFiller),
     config,
   );
 

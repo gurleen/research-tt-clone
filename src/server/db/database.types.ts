@@ -813,7 +813,7 @@ export type Database = {
     Enums: {
       community: "armenian" | "sikh" | "iranian";
       source_type: "micro_influencer" | "institutional" | "control";
-      video_type: "ingroup" | "filler";
+      video_type: "ingroup" | "filler" | "control";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -946,7 +946,7 @@ export const Constants = {
     Enums: {
       community: ["armenian", "sikh", "iranian"],
       source_type: ["micro_influencer", "institutional", "control"],
-      video_type: ["ingroup", "filler"],
+      video_type: ["ingroup", "filler", "control"],
     },
   },
 } as const;

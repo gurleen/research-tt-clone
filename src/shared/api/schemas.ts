@@ -3,6 +3,8 @@ import {
   COMMUNITIES,
   EVENT_NAMES,
   SOURCE_TYPES,
+  TREATMENT_SOURCE_TYPES,
+  VIDEO_TYPES,
   VIDEO_VIEW_ENDED_REASONS,
 } from "./events.ts";
 
@@ -11,6 +13,8 @@ const isoTimestamp = z.iso.datetime({ offset: true });
 
 export const communitySchema = z.enum(COMMUNITIES);
 export const sourceTypeSchema = z.enum(SOURCE_TYPES);
+export const treatmentSourceTypeSchema = z.enum(TREATMENT_SOURCE_TYPES);
+export const videoTypeSchema = z.enum(VIDEO_TYPES);
 
 export const attributionSchema = z.object({
   account_name: z.string(),
@@ -34,7 +38,7 @@ export function parseCatalogComments(value: unknown): CatalogComment[] {
 export const playlistItemSchema = z.object({
   position: z.number().int().nonnegative(),
   video_id: z.string(),
-  video_type: z.enum(["ingroup", "filler"]),
+  video_type: videoTypeSchema,
   media_url: z.string(),
   duration_ms: z.number().int().nullable(),
   attribution: attributionSchema,

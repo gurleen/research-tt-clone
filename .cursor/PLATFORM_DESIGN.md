@@ -41,19 +41,19 @@ the layer that can actually guarantee them:
 ```sql
 create type source_type as enum ('micro_influencer', 'institutional', 'control');
 create type community   as enum ('armenian', 'sikh', 'iranian');
-create type video_type  as enum ('ingroup', 'filler');
+create type video_type  as enum ('ingroup', 'filler', 'control');
 ```
 
 ## Reference tables (stimulus catalog)
 
 ```sql
--- Every video the platform can serve. Ingroup videos are condition-specific;
--- filler videos are non-diaspora and shared across all conditions/communities.
+-- Every video the platform can serve. Ingroup videos are community- and
+-- treatment-specific; filler and control videos are shared (no community).
 create table videos (
   video_id     text primary key,           -- stable slug, e.g. 'ingroup_sikh_micro_03'
   video_type   video_type not null,
-  community    community,                   -- set for ingroup, null for filler
-  source_type  source_type,                 -- set for ingroup, null for filler
+  community    community,                   -- set for ingroup, null for filler/control
+  source_type  source_type,                 -- set for ingroup, null for filler/control
   media_url    text not null,
   duration_ms  integer,                     -- optional; lets the server sanity-check videoEnded
 
@@ -74,10 +74,11 @@ create table videos (
   central_issue text,                       -- metadata for ingroup videos
   created_at    timestamptz not null default now(),
 
-  constraint ingroup_has_condition check (
-    (video_type = 'ingroup' and community is not null and source_type is not null)
-    or
-    (video_type = 'filler'  and community is null     and source_type is null)
+  constraint video_type_fields check (
+    (video_type = 'ingroup' and community is not null
+      and source_type in ('micro_influencer', 'institutional'))
+    or (video_type = 'filler' and community is null and source_type is null)
+    or (video_type = 'control' and community is null and source_type is null)
   )
 );
 
@@ -365,9 +366,10 @@ are idempotent on `event_id`.
   ("this link has already been used").
 - Server (new token): generate UUID → balanced randomization of `source_type`
   (block or stratified, per-community counters) → insert `sessions` → read
-  `experiment_config` for the community → compose playlist (pick ingroup and
-  filler counts within their configured ranges, select ingroup matching
-  `community`+`source_type`, shuffle interleaved with filler, apply the prompt
+  `experiment_config` for the community → compose playlist (pick stimulus and
+  filler counts within their configured ranges; treatment arms select ingroup
+  matching `community`+`source_type`, the control arm selects shared
+  `video_type=control`; shuffle interleaved with filler, apply the prompt
   rule from config) → insert `session_videos` → write `session_start`.
 - Returns: `session_id`, `community`, and the ordered playlist. Each item:
   `{ position, video_id, video_type, media_url, duration_ms,
@@ -454,7 +456,7 @@ arm. The override is rejected in production.
 | Discard IP before logging | IP-strip middleware; no IP column exists |
 | No geo / Cint identifiers stored | No such columns in any table |
 | Randomized order, persisted | `session_videos` rows written once at creation |
-| Correct video set per condition | Playlist composer filters `videos` by `community`+`source_type` |
+| Correct video set per condition | Playlist composer: ingroup by `community`+`source_type`, or shared `video_type=control` |
 | Source handle non-functional | Frontend; API exposes attribution as data only, no URL |
 | Resume pointer monotonic (high-water) | `PATCH /position` rejects backward; client skips rewind PATCHes |
 | Per-visit dwell logged | `evt_video_view`; client sends timing only, server enriches condition |

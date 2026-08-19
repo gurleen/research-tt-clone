@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { spacingImpossibleMessage } from "../../server/services/playlist/playlist-config-issues.ts";
-import { catalogCommentSchema, sourceTypeSchema } from "./schemas.ts";
+import {
+  catalogCommentSchema,
+  sourceTypeSchema,
+  treatmentSourceTypeSchema,
+  videoTypeSchema,
+} from "./schemas.ts";
 
 export const presignUploadBodySchema = z.object({
   video_id: z
@@ -34,9 +39,9 @@ export type AdminConfigResponse = z.infer<typeof adminConfigResponseSchema>;
 export const videoFormSchema = z
   .object({
     video_id: z.string().min(1),
-    video_type: z.enum(["ingroup", "filler"]),
+    video_type: videoTypeSchema,
     community: z.enum(["armenian", "sikh", "iranian"]).nullable(),
-    source_type: sourceTypeSchema.nullable(),
+    source_type: treatmentSourceTypeSchema.nullable(),
     media_url: z.string().url(),
     profile_thumbnail_url: z.string().url(),
     account_name: z.string().min(1),
@@ -69,18 +74,18 @@ export const videoFormSchema = z
       }
     }
 
-    if (value.video_type === "filler") {
+    if (value.video_type === "filler" || value.video_type === "control") {
       if (value.community !== null) {
         ctx.addIssue({
           code: "custom",
-          message: "Filler videos must not have a community",
+          message: `${value.video_type === "control" ? "Control" : "Filler"} videos must not have a community`,
           path: ["community"],
         });
       }
       if (value.source_type !== null) {
         ctx.addIssue({
           code: "custom",
-          message: "Filler videos must not have a source type",
+          message: `${value.video_type === "control" ? "Control" : "Filler"} videos must not have a source type`,
           path: ["source_type"],
         });
       }
@@ -220,7 +225,7 @@ export const adminSessionListResponseSchema = z.object({
 export const adminSessionPlaylistItemSchema = z.object({
   position: z.number().int().nonnegative(),
   video_id: z.string(),
-  video_type: z.enum(["ingroup", "filler"]),
+  video_type: videoTypeSchema,
   account_name: z.string(),
   account_handle: z.string(),
   show_learn_more: z.boolean(),

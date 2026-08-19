@@ -23,10 +23,10 @@ function toFillerSlot(video: VideoRow): PlaylistSlot {
   };
 }
 
-function toIngroupSlot(video: VideoRow): PlaylistSlot {
+function toStimulusSlot(video: VideoRow): PlaylistSlot {
   return {
     video_id: video.video_id,
-    video_type: "ingroup",
+    video_type: video.video_type,
     show_interest_prompt: false,
   };
 }
@@ -42,17 +42,17 @@ export function fillerCountBetween(
     .filter((slot) => slot.video_type === "filler").length;
 }
 
-/** True when every pair of consecutive ingroup slots has 2 fillers between them. */
+/** True when every pair of consecutive non-filler slots has 2 fillers between them. */
 export function hasValidIngroupSpacing(slots: PlaylistSlot[]): boolean {
-  const ingroupIndices = slots
-    .map((slot, index) => (slot.video_type === "ingroup" ? index : -1))
+  const stimulusIndices = slots
+    .map((slot, index) => (slot.video_type !== "filler" ? index : -1))
     .filter((index) => index >= 0);
 
-  for (let i = 1; i < ingroupIndices.length; i++) {
+  for (let i = 1; i < stimulusIndices.length; i++) {
     const gap = fillerCountBetween(
       slots,
-      ingroupIndices[i - 1]!,
-      ingroupIndices[i]!,
+      stimulusIndices[i - 1]!,
+      stimulusIndices[i]!,
     );
     if (
       gap < MIN_FILLERS_BETWEEN_INGROUP ||
@@ -87,7 +87,7 @@ export function shuffleIngroupIntoFiller(
     const startPadding = randomIntInclusive(0, fillerCount);
     return [
       ...shuffledFiller.slice(0, startPadding).map(toFillerSlot),
-      toIngroupSlot(shuffledIngroup[0]!),
+      toStimulusSlot(shuffledIngroup[0]!),
       ...shuffledFiller.slice(startPadding).map(toFillerSlot),
     ];
   }
@@ -132,7 +132,7 @@ export function shuffleIngroupIntoFiller(
   result.push(...takeFiller(startPadding));
 
   for (let i = 0; i < ingroupCount; i++) {
-    result.push(toIngroupSlot(shuffledIngroup[i]!));
+    result.push(toStimulusSlot(shuffledIngroup[i]!));
     if (i < gapCount) {
       result.push(...takeFiller(gaps[i]!));
     }

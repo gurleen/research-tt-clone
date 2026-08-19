@@ -125,12 +125,16 @@ export function VideoForm({ initialVideo, onSaved, onCancel }: VideoFormProps) {
       const next = { ...current, [key]: value };
 
       if (key === "video_type") {
-        if (value === "filler") {
+        if (value === "filler" || value === "control") {
           next.community = null;
           next.source_type = null;
         } else if (value === "ingroup") {
           next.community = current.community ?? "sikh";
-          next.source_type = current.source_type ?? "micro_influencer";
+          next.source_type =
+            current.source_type === "micro_influencer" ||
+            current.source_type === "institutional"
+              ? current.source_type
+              : "micro_influencer";
         }
       }
 
@@ -314,6 +318,7 @@ export function VideoForm({ initialVideo, onSaved, onCancel }: VideoFormProps) {
             <SelectContent>
               <SelectItem value="ingroup">Ingroup</SelectItem>
               <SelectItem value="filler">Filler</SelectItem>
+              <SelectItem value="control">Control</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -356,7 +361,6 @@ export function VideoForm({ initialVideo, onSaved, onCancel }: VideoFormProps) {
                 <SelectContent>
                   <SelectItem value="micro_influencer">Micro influencer</SelectItem>
                   <SelectItem value="institutional">Institutional</SelectItem>
-                  <SelectItem value="control">Control</SelectItem>
                 </SelectContent>
               </Select>
             </div>

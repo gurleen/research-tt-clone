@@ -6,7 +6,7 @@ import {
   shuffleIngroupIntoFiller,
 } from "./shuffle-ingroup-filler.ts";
 
-function mockVideo(id: string, type: "ingroup" | "filler"): VideoRow {
+function mockVideo(id: string, type: "ingroup" | "filler" | "control"): VideoRow {
   return {
     video_id: id,
     video_type: type,
@@ -77,5 +77,23 @@ describe("shuffleIngroupIntoFiller", () => {
 
     expect(slots).toHaveLength(3);
     expect(slots.filter((slot) => slot.video_type === "ingroup")).toHaveLength(1);
+  });
+
+  test("keeps 2 filler videos between consecutive control slots", () => {
+    const control = [
+      mockVideo("control_1", "control"),
+      mockVideo("control_2", "control"),
+    ];
+    const filler = Array.from({ length: 6 }, (_, index) =>
+      mockVideo(`filler_${index}`, "filler"),
+    );
+
+    for (let run = 0; run < 20; run++) {
+      const slots = shuffleIngroupIntoFiller(control, filler);
+      expect(slots.filter((slot) => slot.video_type === "control")).toHaveLength(
+        2,
+      );
+      expect(hasValidIngroupSpacing(slots)).toBe(true);
+    }
   });
 });

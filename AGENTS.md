@@ -6,11 +6,11 @@ Guidance for coding agents working in this repo.
 
 A **TikTok-style short-video feed** used as a research experiment (diaspora mobilization study). The UI copies TikTok *layout patterns* but must **not** use TikTok branding, logos, watermarks, or the cyan/red Create button.
 
-Participants open a recruitment link with `?community=armenian|sikh|iranian`. The server assigns a between-subjects `source_type` (`micro_influencer`, `institutional`, or `control`), composes a **fixed playlist** of ingroup + filler videos, and logs behavioral events. Researchers manage the stimulus catalog and experiment knobs from `/admin`.
+Participants open a recruitment link with `?community=armenian|sikh|iranian`. The server assigns a between-subjects `source_type` (`micro_influencer`, `institutional`, or `control`), composes a **fixed playlist**, and logs behavioral events. Treatment arms get community-matched ingroup videos plus fillers. The control arm gets a shared control catalog plus fillers. Researchers manage the stimulus catalog and experiment knobs from `/admin`.
 
 Communities: `armenian`, `sikh`, `iranian`.  
-Video types: `ingroup` (condition-specific) and `filler` (shared).  
-Source types: `micro_influencer`, `institutional`, `control`.
+Video types: `ingroup` (community + treatment source), `filler` (shared), `control` (shared, no community).  
+Source types on videos: `micro_influencer`, `institutional`. Session arm also includes `control`.
 
 ## Stack
 
@@ -96,7 +96,7 @@ Feed is **mobile-only** (~390×844). Desktop is a centered phone frame, not a de
 | Intermittent Yes/No prompt on fillers | `src/components/study/InterestPrompt.tsx` |
 | Click logging before stub open | `postEventBeacon` in `src/study/events.ts` (must fire *before* UI opens) |
 
-Ingroup videos get `show_learn_more`. Fillers may get `show_interest_prompt`. Prompt answers are logged and **must not** change the playlist.
+Ingroup videos get `show_learn_more`. Fillers may get `show_interest_prompt`. Control videos get neither. Prompt answers are logged and **must not** change the playlist.
 
 ### Server: sessions, playlist, events
 
@@ -104,7 +104,7 @@ Ingroup videos get `show_learn_more`. Fillers may get `show_interest_prompt`. Pr
 | --- | --- |
 | Create session + balanced randomization | `src/server/services/sessions/create-session.ts`, `…/randomization/assign-source-type.ts` |
 | Playlist composition | `src/server/services/playlist/compose-playlist.ts` |
-| Ingroup/filler shuffle + min 2 fillers between consecutive ingroup | `shuffle-ingroup-filler.ts` |
+| Ingroup or control interleaved with fillers (min 2 fillers between consecutive stimulus videos) | `shuffle-ingroup-filler.ts` |
 | Prompt probability / min-spacing | `place-prompts.ts` |
 | Resume pointer (monotonic) | `advance-position.ts` |
 | Session JSON for the client | `build-session-response.ts` |
