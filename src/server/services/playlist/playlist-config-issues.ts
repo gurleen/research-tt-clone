@@ -4,6 +4,7 @@ import {
   type VideoType,
 } from "../../../shared/api/events.ts";
 import {
+  LEADING_FILLER_COUNT,
   MIN_FILLERS_BETWEEN_INGROUP,
   minFillerCountForIngroupSpacing,
 } from "./shuffle-ingroup-filler.ts";
@@ -59,7 +60,7 @@ export function spacingImpossibleMessage(
     return null;
   }
 
-  return `Need at least ${minFillers} filler videos for ${ingroupCountMax} ingroup videos (minimum ${MIN_FILLERS_BETWEEN_INGROUP} fillers between each ingroup).`;
+  return `Need at least ${minFillers} filler videos for ${ingroupCountMax} ingroup videos (${LEADING_FILLER_COUNT} fillers before the first ingroup, then ${MIN_FILLERS_BETWEEN_INGROUP} between each).`;
 }
 
 export function catalogCountsFromVideos(
@@ -113,10 +114,22 @@ export function playlistConfigIssues(
     return issues;
   }
 
-  if (catalog.filler < settings.filler_count_min) {
+  const layoutFloor = minFillerCountForIngroupSpacing(
+    settings.ingroup_count_max,
+  );
+
+  if (
+    catalog.filler < settings.filler_count_min &&
+    settings.filler_count_min >= layoutFloor
+  ) {
     issues.push({
       kind: "catalog_filler",
       message: `Only ${catalog.filler} active filler ${pluralVideos(catalog.filler)} uploaded; filler count min is ${settings.filler_count_min}.`,
+    });
+  } else if (catalog.filler < layoutFloor) {
+    issues.push({
+      kind: "catalog_filler",
+      message: `Only ${catalog.filler} active filler ${pluralVideos(catalog.filler)} uploaded; need at least ${layoutFloor} for ${LEADING_FILLER_COUNT} leading fillers plus ${MIN_FILLERS_BETWEEN_INGROUP} between each ingroup.`,
     });
   } else if (catalog.filler < settings.filler_count_max) {
     issues.push({

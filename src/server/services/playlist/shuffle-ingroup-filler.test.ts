@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { VideoRow } from "../../db/tables.ts";
 import {
+  hasLeadingFillerBaseline,
   hasValidIngroupSpacing,
   minFillerCountForIngroupSpacing,
   shuffleIngroupIntoFiller,
@@ -31,10 +32,12 @@ function mockVideo(id: string, type: "ingroup" | "filler" | "control"): VideoRow
 }
 
 describe("minFillerCountForIngroupSpacing", () => {
-  test("requires two fillers between each ingroup pair", () => {
-    expect(minFillerCountForIngroupSpacing(1)).toBe(0);
-    expect(minFillerCountForIngroupSpacing(3)).toBe(4);
-    expect(minFillerCountForIngroupSpacing(5)).toBe(8);
+  test("requires 3 leading fillers plus two between each ingroup pair", () => {
+    expect(minFillerCountForIngroupSpacing(0)).toBe(0);
+    expect(minFillerCountForIngroupSpacing(1)).toBe(3);
+    expect(minFillerCountForIngroupSpacing(3)).toBe(7);
+    expect(minFillerCountForIngroupSpacing(4)).toBe(9);
+    expect(minFillerCountForIngroupSpacing(5)).toBe(11);
   });
 });
 
@@ -53,6 +56,7 @@ describe("shuffleIngroupIntoFiller", () => {
       const slots = shuffleIngroupIntoFiller(ingroup, filler);
       expect(slots).toHaveLength(ingroup.length + filler.length);
       expect(hasValidIngroupSpacing(slots)).toBe(true);
+      expect(hasLeadingFillerBaseline(slots)).toBe(true);
     }
   });
 
@@ -65,18 +69,34 @@ describe("shuffleIngroupIntoFiller", () => {
     const filler = [mockVideo("filler_0", "filler")];
 
     expect(() => shuffleIngroupIntoFiller(ingroup, filler)).toThrow(
-      /need at least 4, have 1/,
+      /need at least 7, have 1/,
     );
   });
 
-  test("allows a single ingroup with any filler count", () => {
+  test("places 3 fillers before a single ingroup", () => {
+    const filler = Array.from({ length: 5 }, (_, index) =>
+      mockVideo(`filler_${index}`, "filler"),
+    );
     const slots = shuffleIngroupIntoFiller(
       [mockVideo("ingroup_1", "ingroup")],
-      [mockVideo("filler_0", "filler"), mockVideo("filler_1", "filler")],
+      filler,
     );
 
-    expect(slots).toHaveLength(3);
+    expect(slots).toHaveLength(6);
     expect(slots.filter((slot) => slot.video_type === "ingroup")).toHaveLength(1);
+    expect(hasLeadingFillerBaseline(slots)).toBe(true);
+    expect(slots.slice(0, 3).every((slot) => slot.video_type === "filler")).toBe(
+      true,
+    );
+  });
+
+  test("throws when a single ingroup has fewer than 3 fillers", () => {
+    expect(() =>
+      shuffleIngroupIntoFiller(
+        [mockVideo("ingroup_1", "ingroup")],
+        [mockVideo("filler_0", "filler"), mockVideo("filler_1", "filler")],
+      ),
+    ).toThrow(/need at least 3, have 2/);
   });
 
   test("keeps 2 filler videos between consecutive control slots", () => {
@@ -94,6 +114,7 @@ describe("shuffleIngroupIntoFiller", () => {
         2,
       );
       expect(hasValidIngroupSpacing(slots)).toBe(true);
+      expect(hasLeadingFillerBaseline(slots)).toBe(true);
     }
   });
 });

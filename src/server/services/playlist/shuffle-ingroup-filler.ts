@@ -7,12 +7,16 @@ import type { PlaylistSlot } from "./place-prompts.ts";
 
 export const MIN_FILLERS_BETWEEN_INGROUP = 2;
 export const MAX_FILLERS_BETWEEN_INGROUP = 2;
+export const LEADING_FILLER_COUNT = 3;
 
 export function minFillerCountForIngroupSpacing(ingroupCount: number): number {
-  if (ingroupCount <= 1) {
+  if (ingroupCount <= 0) {
     return 0;
   }
-  return (ingroupCount - 1) * MIN_FILLERS_BETWEEN_INGROUP;
+  return (
+    LEADING_FILLER_COUNT +
+    (ingroupCount - 1) * MIN_FILLERS_BETWEEN_INGROUP
+  );
 }
 
 function toFillerSlot(video: VideoRow): PlaylistSlot {
@@ -65,9 +69,19 @@ export function hasValidIngroupSpacing(slots: PlaylistSlot[]): boolean {
   return true;
 }
 
+/** True when the first stimulus is preceded by at least 3 fillers, or there is none. */
+export function hasLeadingFillerBaseline(slots: PlaylistSlot[]): boolean {
+  const firstStimulus = slots.findIndex((slot) => slot.video_type !== "filler");
+  if (firstStimulus < 0) {
+    return true;
+  }
+  return firstStimulus >= LEADING_FILLER_COUNT;
+}
+
 /**
- * Interleave ingroup videos into filler with 2 filler videos between each
- * consecutive ingroup slot. Extra filler goes to the start and/or end.
+ * Interleave ingroup videos into filler with 3 fillers before the first
+ * stimulus and 2 filler videos between each consecutive ingroup slot.
+ * Extra filler goes to the start and/or end.
  */
 export function shuffleIngroupIntoFiller(
   ingroup: VideoRow[],
@@ -81,15 +95,6 @@ export function shuffleIngroupIntoFiller(
 
   if (ingroupCount === 0) {
     return shuffledFiller.map(toFillerSlot);
-  }
-
-  if (ingroupCount === 1) {
-    const startPadding = randomIntInclusive(0, fillerCount);
-    return [
-      ...shuffledFiller.slice(0, startPadding).map(toFillerSlot),
-      toStimulusSlot(shuffledIngroup[0]!),
-      ...shuffledFiller.slice(startPadding).map(toFillerSlot),
-    ];
   }
 
   const minRequired = minFillerCountForIngroupSpacing(ingroupCount);
@@ -117,8 +122,9 @@ export function shuffleIngroupIntoFiller(
     spare--;
   }
 
-  const startPadding = spare > 0 ? randomIntInclusive(0, spare) : 0;
-  const endPadding = spare - startPadding;
+  const extraStart = spare > 0 ? randomIntInclusive(0, spare) : 0;
+  const startPadding = LEADING_FILLER_COUNT + extraStart;
+  const endPadding = spare - extraStart;
 
   const result: PlaylistSlot[] = [];
   let fillerIndex = 0;

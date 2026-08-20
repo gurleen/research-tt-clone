@@ -104,7 +104,7 @@ Ingroup videos get `show_learn_more` (stub link). Stimulus videos (ingroup or co
 | --- | --- |
 | Create session + balanced randomization | `src/server/services/sessions/create-session.ts`, `…/randomization/assign-source-type.ts` |
 | Playlist composition | `src/server/services/playlist/compose-playlist.ts` |
-| Ingroup or control interleaved with fillers (min 2 fillers between consecutive stimulus videos) | `shuffle-ingroup-filler.ts` |
+| Ingroup or control interleaved with fillers (3 leading fillers, then min 2 between consecutive stimulus videos) | `shuffle-ingroup-filler.ts` |
 | Prompt probability / min-spacing (stimulus + filler pools) | `place-prompts.ts` |
 | Resume pointer (monotonic) | `advance-position.ts` |
 | Session JSON for the client | `build-session-response.ts` |

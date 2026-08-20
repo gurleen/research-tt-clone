@@ -327,8 +327,8 @@ describe("admin schemas", () => {
       community: "armenian",
       ingroup_count_min: 3,
       ingroup_count_max: 4,
-      filler_count_min: 7,
-      filler_count_max: 8,
+      filler_count_min: 9,
+      filler_count_max: 10,
       prompt_probability: 0.45,
       prompt_min_spacing: 1,
     });
@@ -348,7 +348,7 @@ describe("admin schemas", () => {
     expect(parsed.success).toBe(false);
     if (!parsed.success) {
       expect(parsed.error.issues[0]?.message).toMatch(
-        /Need at least 8 filler videos/,
+        /Need at least 11 filler videos/,
       );
     }
   });

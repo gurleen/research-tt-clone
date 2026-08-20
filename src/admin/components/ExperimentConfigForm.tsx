@@ -120,10 +120,11 @@ export function ExperimentConfigForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <p className="text-sm text-zinc-600">
         Playlist counts and prompt rules used when creating new sessions.
-        Set min = max for a fixed count. Consecutive ingroup videos always
-        have at least 2 fillers between them. Prompt probability and spacing
-        apply independently to stimulus videos (ingroup or control) and to
-        fillers. Every new session gets at least one topic prompt on a
+        Set min = max for a fixed count. Every session starts with 3 filler
+        videos before the first ingroup or control video. Consecutive ingroup
+        videos always have at least 2 fillers between them. Prompt probability
+        and spacing apply independently to stimulus videos (ingroup or control)
+        and to fillers. Every new session gets at least one topic prompt on a
         stimulus video.
       </p>
 
