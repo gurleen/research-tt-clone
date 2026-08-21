@@ -8,7 +8,7 @@ import {
 } from "./playlist-config-issues.ts";
 
 const ampleCatalog: PlaylistCatalogCounts = {
-  filler: 10,
+  filler: 12,
   control: 5,
   ingroup: {
     micro_influencer: 5,
@@ -19,19 +19,22 @@ const ampleCatalog: PlaylistCatalogCounts = {
 const validCounts: PlaylistCountSettings = {
   ingroup_count_min: 3,
   ingroup_count_max: 4,
-  filler_count_min: 7,
-  filler_count_max: 8,
+  filler_count_min: 9,
+  filler_count_max: 10,
 };
 
 describe("spacingImpossibleMessage", () => {
-  test("returns null when filler max covers the 2-filler gap", () => {
-    expect(spacingImpossibleMessage(4, 8)).toBeNull();
-    expect(spacingImpossibleMessage(1, 0)).toBeNull();
+  test("returns null when filler max covers leading fillers and the 2-filler gap", () => {
+    expect(spacingImpossibleMessage(4, 9)).toBeNull();
+    expect(spacingImpossibleMessage(1, 3)).toBeNull();
   });
 
   test("describes the required filler count for max ingroup", () => {
     expect(spacingImpossibleMessage(5, 3)).toBe(
-      "Need at least 8 filler videos for 5 ingroup videos (minimum 2 fillers between each ingroup).",
+      "Need at least 11 filler videos for 5 ingroup videos (3 fillers before the first ingroup, then 2 between each).",
+    );
+    expect(spacingImpossibleMessage(4, 8)).toBe(
+      "Need at least 9 filler videos for 4 ingroup videos (3 fillers before the first ingroup, then 2 between each).",
     );
   });
 });
@@ -97,7 +100,7 @@ describe("playlistConfigIssues", () => {
       {
         kind: "spacing",
         message:
-          "Need at least 8 filler videos for 5 ingroup videos (minimum 2 fillers between each ingroup).",
+          "Need at least 11 filler videos for 5 ingroup videos (3 fillers before the first ingroup, then 2 between each).",
       },
     ]);
   });
@@ -112,7 +115,7 @@ describe("playlistConfigIssues", () => {
       {
         kind: "catalog_filler",
         message:
-          "Only 4 active filler videos uploaded; filler count min is 7.",
+          "Only 4 active filler videos uploaded; filler count min is 9.",
       },
     ]);
   });
@@ -120,14 +123,37 @@ describe("playlistConfigIssues", () => {
   test("flags filler catalog shortage against the configured max", () => {
     const issues = playlistConfigIssues(validCounts, {
       ...ampleCatalog,
-      filler: 7,
+      filler: 9,
     });
 
     expect(issues).toEqual([
       {
         kind: "catalog_filler",
         message:
-          "Only 7 active filler videos uploaded; filler count max is 8.",
+          "Only 9 active filler videos uploaded; filler count max is 10.",
+      },
+    ]);
+  });
+
+  test("flags filler catalog shortage against the leading-filler layout floor", () => {
+    const issues = playlistConfigIssues(
+      {
+        ingroup_count_min: 3,
+        ingroup_count_max: 4,
+        filler_count_min: 5,
+        filler_count_max: 20,
+      },
+      {
+        ...ampleCatalog,
+        filler: 7,
+      },
+    );
+
+    expect(issues).toEqual([
+      {
+        kind: "catalog_filler",
+        message:
+          "Only 7 active filler videos uploaded; need at least 9 for 3 leading fillers plus 2 between each ingroup.",
       },
     ]);
   });

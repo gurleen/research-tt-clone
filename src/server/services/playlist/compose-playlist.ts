@@ -4,6 +4,8 @@ import { randomIntInclusive, sampleWithoutReplacement } from "../../lib/random.t
 import type { Community, SessionVideoInsert, SourceType } from "../../db/tables.ts";
 import { placePrompts } from "./place-prompts.ts";
 import {
+  LEADING_FILLER_COUNT,
+  MIN_FILLERS_BETWEEN_INGROUP,
   minFillerCountForIngroupSpacing,
   shuffleIngroupIntoFiller,
 } from "./shuffle-ingroup-filler.ts";
@@ -46,7 +48,7 @@ export async function composePlaylistSlots(
   if (fillerCount > config.filler_count_max) {
     throw new ApiError(
       503,
-      `Experiment config cannot satisfy ingroup spacing: need at least ${minFillerForSpacing} filler videos for ${stimulusCount} ingroup, but filler_count_max is ${config.filler_count_max}`,
+      `Experiment config cannot satisfy ingroup spacing: need at least ${minFillerForSpacing} filler videos for ${stimulusCount} ingroup (${LEADING_FILLER_COUNT} before the first, then ${MIN_FILLERS_BETWEEN_INGROUP} between each), but filler_count_max is ${config.filler_count_max}`,
     );
   }
 
