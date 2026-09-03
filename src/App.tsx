@@ -1,9 +1,12 @@
 import { BrowserRouter, Route, Routes } from "react-router";
 import { AdminAuthProvider } from "./admin/auth/AdminAuthProvider.tsx";
+import { PasswordRecoveryGate } from "./admin/components/PasswordRecoveryGate.tsx";
 import { ProtectedRoute } from "./admin/components/ProtectedRoute.tsx";
 import { AdminLayout } from "./admin/layout/AdminLayout.tsx";
 import { DashboardPage } from "./admin/pages/DashboardPage.tsx";
+import { ForgotPasswordPage } from "./admin/pages/ForgotPasswordPage.tsx";
 import { LoginPage } from "./admin/pages/LoginPage.tsx";
+import { UpdatePasswordPage } from "./admin/pages/UpdatePasswordPage.tsx";
 import { VideoEditPage } from "./admin/pages/VideoEditPage.tsx";
 import { VideosPage } from "./admin/pages/VideosPage.tsx";
 import { StubContentPage } from "./admin/pages/StubContentPage.tsx";
@@ -20,10 +23,13 @@ export function App() {
   return (
     <BrowserRouter>
       <AdminAuthProvider>
+        <PasswordRecoveryGate />
         <Routes>
           <Route path="/" element={<FeedPage />} />
           <Route path="/stub" element={<StubPage />} />
           <Route path="/admin/login" element={<LoginPage />} />
+          <Route path="/admin/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/admin/update-password" element={<UpdatePasswordPage />} />
           <Route
             path="/admin"
             element={

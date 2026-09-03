@@ -108,6 +108,9 @@ export function AdminSidebar({
           </Select>
         </div>
 
+        <Button variant="outline" className="w-full" asChild>
+          <Link to="/admin/update-password">Change password</Link>
+        </Button>
         <Button variant="outline" className="w-full" onClick={() => signOut()}>
           Sign out
         </Button>

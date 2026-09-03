@@ -41,7 +41,7 @@ bun run configure:r2-cors
 Dev URL is printed by Bun (default `http://localhost:3000`).
 
 Participant entry: `/?community=sikh&external_id=R_…`  
-Admin: `/admin` (Supabase Auth; user `app_metadata.role` must be `"admin"`)
+Admin: `/admin` (Supabase Auth; user `app_metadata.role` must be `"admin"`). Sign-in at `/admin/login`; forgot password at `/admin/forgot-password`; recovery and signed-in change at `/admin/update-password`. Add those update-password URLs (localhost + production origin) under Authentication → URL Configuration → Redirect URLs.
 
 ## Architecture
 
@@ -129,7 +129,7 @@ Ingroup videos get `show_learn_more` (stub link). Stimulus videos (ingroup or co
 | Session list | `/admin/sessions` | `SessionsPage.tsx` |
 | Per-session events | `/admin/sessions/:sessionId` | `SessionStatsPage.tsx` |
 
-Auth: `src/admin/auth/`. Nav: `src/admin/nav.ts`. Admin flag: `src/shared/auth/admin.ts`.
+Auth: `src/admin/auth/`. Login / forgot / update password: `/admin/login`, `/admin/forgot-password`, `/admin/update-password`. Nav: `src/admin/nav.ts`. Admin flag: `src/shared/auth/admin.ts`.
 
 Video files upload: browser → `POST /api/admin/uploads/presign` → PUT to R2. Keys: `stimulus/{videoId}/{kind}.{ext}` (`src/server/services/r2/`).
 
