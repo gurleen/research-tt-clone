@@ -10,15 +10,27 @@ import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../server/db/database.types.ts";
 import { isAdminAppMetadata } from "../../shared/auth/admin.ts";
 import { getSupabaseBrowserClient } from "../lib/supabase-browser.ts";
+import {
+  readPasswordRecoveryFlag,
+  UPDATE_PASSWORD_PATH,
+  writePasswordRecoveryFlag,
+} from "./password.ts";
 
 type AdminAuthContextValue = {
   client: SupabaseClient<Database> | null;
   session: Session | null;
   isAdmin: boolean;
+  isPasswordRecovery: boolean;
   loading: boolean;
   error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
+  changePassword: (
+    currentPassword: string,
+    newPassword: string,
+  ) => Promise<void>;
 };
 
 const AdminAuthContext = createContext<AdminAuthContextValue | null>(null);
@@ -26,6 +38,9 @@ const AdminAuthContext = createContext<AdminAuthContextValue | null>(null);
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [client, setClient] = useState<SupabaseClient<Database> | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(
+    readPasswordRecoveryFlag,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,8 +76,16 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = client.auth.onAuthStateChange((_event, nextSession) => {
+    } = client.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession);
+      if (event === "PASSWORD_RECOVERY") {
+        writePasswordRecoveryFlag(true);
+        setIsPasswordRecovery(true);
+      }
+      if (event === "SIGNED_OUT") {
+        writePasswordRecoveryFlag(false);
+        setIsPasswordRecovery(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -71,10 +94,16 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AdminAuthContextValue>(() => {
     const isAdmin = isAdminAppMetadata(session?.user.app_metadata);
 
+    function clearPasswordRecovery() {
+      writePasswordRecoveryFlag(false);
+      setIsPasswordRecovery(false);
+    }
+
     return {
       client,
       session,
       isAdmin,
+      isPasswordRecovery,
       loading,
       error,
       signIn: async (email, password) => {
@@ -93,8 +122,56 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         if (!client) return;
         await client.auth.signOut();
       },
+      requestPasswordReset: async (email) => {
+        if (!client) {
+          throw new Error("Auth client not ready");
+        }
+        const { error: resetError } = await client.auth.resetPasswordForEmail(
+          email,
+          {
+            redirectTo: `${window.location.origin}${UPDATE_PASSWORD_PATH}`,
+          },
+        );
+        if (resetError) {
+          throw resetError;
+        }
+      },
+      updatePassword: async (password) => {
+        if (!client) {
+          throw new Error("Auth client not ready");
+        }
+        const { error: updateError } = await client.auth.updateUser({
+          password,
+        });
+        if (updateError) {
+          throw updateError;
+        }
+        clearPasswordRecovery();
+      },
+      changePassword: async (currentPassword, newPassword) => {
+        if (!client) {
+          throw new Error("Auth client not ready");
+        }
+        const email = session?.user.email;
+        if (!email) {
+          throw new Error("Signed-in email is missing");
+        }
+        const { error: verifyError } = await client.auth.signInWithPassword({
+          email,
+          password: currentPassword,
+        });
+        if (verifyError) {
+          throw verifyError;
+        }
+        const { error: updateError } = await client.auth.updateUser({
+          password: newPassword,
+        });
+        if (updateError) {
+          throw updateError;
+        }
+      },
     };
-  }, [client, session, loading, error]);
+  }, [client, session, isPasswordRecovery, loading, error]);
 
   return (
     <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>
