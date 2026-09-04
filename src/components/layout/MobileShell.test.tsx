@@ -13,6 +13,7 @@ describe("MobileShell", () => {
       </MobileShell>,
     );
 
+    expect(html).toContain("feed-frame-root");
     expect(html).toContain("app-shell");
     expect(html).not.toContain("w-full");
     expect(html).toContain("feed");
