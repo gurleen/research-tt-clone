@@ -1,5 +1,10 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { detectLoopWrap } from "../../hooks/video-dwell.ts";
+import {
+  shouldRetryVideoLoad,
+  videoLoadRetryDelayMs,
+  videoSrcForLoadAttempt,
+} from "./video-load-retry.ts";
 
 type VideoPlayerProps = {
   src: string;
@@ -32,12 +37,27 @@ export function VideoPlayer({
   const ref = useRef<HTMLVideoElement>(null);
   const lastTimeRef = useRef(0);
   const ignoreWrapRef = useRef(true);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retryScheduledRef = useRef(false);
+  const playbackSrc = videoSrcForLoadAttempt(src, loadAttempt);
 
   const play = useCallback(async () => {
     const video = ref.current;
     if (!video || !isActive || userPaused) return;
     await startPlayback(video);
   }, [isActive, userPaused]);
+
+  useEffect(() => {
+    setLoadAttempt(0);
+    retryScheduledRef.current = false;
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
+  }, [src]);
 
   useEffect(() => {
     const video = ref.current;
@@ -56,17 +76,30 @@ export function VideoPlayer({
     video.currentTime = 0;
     if (!userPaused) void play();
 
-    const retry = () => {
+    const retryPlay = () => {
       if (!userPaused) void play();
     };
-    video.addEventListener("canplay", retry);
-    video.addEventListener("loadeddata", retry);
+    video.addEventListener("canplay", retryPlay);
+    video.addEventListener("loadeddata", retryPlay);
 
     return () => {
-      video.removeEventListener("canplay", retry);
-      video.removeEventListener("loadeddata", retry);
+      video.removeEventListener("canplay", retryPlay);
+      video.removeEventListener("loadeddata", retryPlay);
     };
-  }, [isActive, src]);
+  }, [isActive, src, loadAttempt]);
+
+  const handleLoadError = useCallback(() => {
+    if (retryScheduledRef.current) return;
+    const code = ref.current?.error?.code ?? null;
+    if (!shouldRetryVideoLoad(loadAttempt, code)) return;
+
+    retryScheduledRef.current = true;
+    const nextAttempt = loadAttempt + 1;
+    retryTimeoutRef.current = setTimeout(() => {
+      retryScheduledRef.current = false;
+      setLoadAttempt(nextAttempt);
+    }, videoLoadRetryDelayMs(nextAttempt));
+  }, [loadAttempt]);
 
   useEffect(() => {
     const video = ref.current;
@@ -82,13 +115,14 @@ export function VideoPlayer({
   return (
     <video
       ref={ref}
-      src={src}
+      src={playbackSrc}
       className="absolute inset-0 w-full h-full object-cover bg-black"
       autoPlay={isActive}
       playsInline
       preload="auto"
       loop
       muted={false}
+      onError={handleLoadError}
       onPlay={() => {
         if (isActive) onPlayingChange(true);
       }}
