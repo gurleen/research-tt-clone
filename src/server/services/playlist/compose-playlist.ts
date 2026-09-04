@@ -6,6 +6,8 @@ import { placePrompts } from "./place-prompts.ts";
 import {
   LEADING_FILLER_COUNT,
   MIN_FILLERS_BETWEEN_INGROUP,
+  ensureTrailingFiller,
+  hasTrailingFiller,
   minFillerCountForIngroupSpacing,
   shuffleIngroupIntoFiller,
 } from "./shuffle-ingroup-filler.ts";
@@ -102,9 +104,25 @@ export async function composePlaylistSlots(
     stimulusCount,
   );
   const selectedFiller = sampleWithoutReplacement(fillerPool!, fillerCount);
+  const unusedFillers = fillerPool!.filter(
+    (video) =>
+      !selectedFiller.some((picked) => picked.video_id === video.video_id),
+  );
+  const extraFiller =
+    unusedFillers.length > 0
+      ? sampleWithoutReplacement(unusedFillers, 1)[0]
+      : undefined;
+
+  const shuffled = shuffleIngroupIntoFiller(selectedStimulus, selectedFiller);
+  if (!hasTrailingFiller(shuffled) && extraFiller == null) {
+    throw new ApiError(
+      503,
+      "Not enough filler videos in catalog to end playlist on a filler",
+    );
+  }
 
   const slots = placePrompts(
-    shuffleIngroupIntoFiller(selectedStimulus, selectedFiller),
+    ensureTrailingFiller(shuffled, extraFiller),
     config,
   );
 

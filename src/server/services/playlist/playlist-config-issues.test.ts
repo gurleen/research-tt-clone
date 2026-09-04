@@ -106,31 +106,44 @@ describe("playlistConfigIssues", () => {
   });
 
   test("flags filler catalog shortage against the configured min", () => {
-    const issues = playlistConfigIssues(validCounts, {
-      ...ampleCatalog,
-      filler: 4,
-    });
+    const issues = playlistConfigIssues(
+      {
+        ...validCounts,
+        filler_count_min: 10,
+        filler_count_max: 10,
+      },
+      {
+        ...ampleCatalog,
+        filler: 4,
+      },
+    );
 
     expect(issues).toEqual([
       {
         kind: "catalog_filler",
         message:
-          "Only 4 active filler videos uploaded; filler count min is 9.",
+          "Only 4 active filler videos uploaded; filler count min is 10.",
       },
     ]);
   });
 
   test("flags filler catalog shortage against the configured max", () => {
-    const issues = playlistConfigIssues(validCounts, {
-      ...ampleCatalog,
-      filler: 9,
-    });
+    const issues = playlistConfigIssues(
+      {
+        ...validCounts,
+        filler_count_max: 12,
+      },
+      {
+        ...ampleCatalog,
+        filler: 11,
+      },
+    );
 
     expect(issues).toEqual([
       {
         kind: "catalog_filler",
         message:
-          "Only 9 active filler videos uploaded; filler count max is 10.",
+          "Only 11 active filler videos uploaded; filler count max is 12.",
       },
     ]);
   });
@@ -153,7 +166,7 @@ describe("playlistConfigIssues", () => {
       {
         kind: "catalog_filler",
         message:
-          "Only 7 active filler videos uploaded; need at least 9 for 3 leading fillers plus 2 between each ingroup.",
+          "Only 7 active filler videos uploaded; need at least 10 for 3 leading fillers, 2 between each ingroup, and 1 trailing filler.",
       },
     ]);
   });
