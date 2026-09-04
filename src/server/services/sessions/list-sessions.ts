@@ -5,7 +5,7 @@ export async function listSessions(filters: AdminSessionListQuery) {
   let query = db
     .from("sessions")
     .select(
-      "session_id, community, source_type, status, current_position, assigned_at",
+      "session_id, community, source_type, status, current_position, assigned_at, demo_mode",
       { count: "exact" },
     );
 

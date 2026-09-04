@@ -91,6 +91,7 @@ export async function buildSessionResponse(
     community: session.community,
     current_position: session.current_position,
     status: session.status as SessionResponse["status"],
+    demo_mode: session.demo_mode,
     playlist,
     interest_prompt_reveal_fraction: settings.interestPromptRevealFraction,
   };

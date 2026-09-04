@@ -15,7 +15,7 @@ export async function handleCreateSession(req: Request): Promise<Response> {
     );
   }
 
-  if (!env.stagingMode && !body.external_id) {
+  if (!env.stagingMode && !body.external_id && !body.demo_mode) {
     throw new ApiError(
       400,
       "Missing study link token. Open the study from your survey.",
@@ -26,6 +26,7 @@ export async function handleCreateSession(req: Request): Promise<Response> {
     body.community,
     body.source_type,
     body.external_id,
+    body.demo_mode === true,
   );
   const response = await buildSessionResponse(session);
   return json(response, created ? 201 : 200);
