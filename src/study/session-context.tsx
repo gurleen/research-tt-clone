@@ -19,10 +19,12 @@ import {
   type SourceType,
 } from "../shared/api/types.ts";
 import type { StudyFeedVideo } from "../types/feed.ts";
+import {
+  STUDY_SESSION_STORAGE_KEY,
+  clearStudyClientState,
+} from "./client-state.ts";
 import { createStudyClient } from "./events.ts";
 import { mapPlaylist } from "./map-playlist-item.ts";
-
-const STORAGE_KEY = "study_session_id";
 
 export type StudySessionState =
   | "loading"
@@ -41,6 +43,8 @@ type StudySessionContextValue = {
   markComplete: () => void;
   patchPosition: (position: number) => Promise<void>;
   completePlaylist: () => Promise<void>;
+  restartSession: () => Promise<void>;
+  allowRestart: boolean;
 };
 
 const StudySessionContext = createContext<StudySessionContextValue | null>(
@@ -94,7 +98,7 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     async function applySession(next: SessionResponse) {
-      sessionStorage.setItem(STORAGE_KEY, next.session_id);
+      sessionStorage.setItem(STUDY_SESSION_STORAGE_KEY, next.session_id);
       setSession(next);
       setState(
         next.status === "playlist_complete" && !next.demo_mode
@@ -131,7 +135,7 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const storedSessionId = sessionStorage.getItem(STORAGE_KEY);
+        const storedSessionId = sessionStorage.getItem(STUDY_SESSION_STORAGE_KEY);
         const sessionId = urlSessionId ?? storedSessionId;
 
         if (sessionId) {
@@ -221,6 +225,50 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
     setState("complete");
   }, [client, session]);
 
+  const restartSession = useCallback(async () => {
+    const previousId = session?.session_id;
+    clearStudyClientState(previousId);
+    highWaterRef.current = 0;
+    setHandoffUrl(null);
+
+    if (session?.demo_mode) {
+      window.location.reload();
+      return;
+    }
+
+    const community =
+      session?.community ??
+      (isCommunity(urlCommunity) ? urlCommunity : null);
+    if (!community) {
+      setError(
+        "Missing community. Open the study link with ?community=armenian, sikh, or iranian.",
+      );
+      setState("error");
+      return;
+    }
+
+    setState("loading");
+    try {
+      const body: CreateSessionBody = { community };
+      if (isSourceType(urlSourceType)) {
+        body.source_type = urlSourceType;
+      }
+      if (session?.demo_mode) {
+        body.demo_mode = true;
+      }
+      const created = await client.createSession(body);
+      const params = new URLSearchParams(window.location.search);
+      params.set("session_id", created.session_id);
+      params.set("community", created.community);
+      window.location.assign(
+        `${window.location.pathname}?${params.toString()}`,
+      );
+    } catch (err) {
+      setError(catalogErrorMessage(err, community));
+      setState("error");
+    }
+  }, [client, session, urlCommunity, urlSourceType]);
+
   const value = useMemo<StudySessionContextValue>(
     () => ({
       state,
@@ -233,6 +281,8 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
       markComplete,
       patchPosition,
       completePlaylist,
+      restartSession,
+      allowRestart: !urlExternalId,
     }),
     [
       state,
@@ -245,6 +295,8 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
       markComplete,
       patchPosition,
       completePlaylist,
+      restartSession,
+      urlExternalId,
     ],
   );
 
