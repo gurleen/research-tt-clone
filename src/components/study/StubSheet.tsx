@@ -77,7 +77,7 @@ export function StubSheet({
 
   return (
     <div
-      className="fixed inset-0 flex flex-col justify-end"
+      className="absolute inset-0 flex flex-col justify-end"
       style={{ zIndex: Z.sheet }}
     >
       <button

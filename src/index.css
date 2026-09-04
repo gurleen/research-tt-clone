@@ -5,6 +5,8 @@
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --bottom-chrome: calc(var(--bottom-nav-height) + var(--safe-area-bottom));
+  /* Large-phone logical width; desktop column also never exceeds 9:16 of the viewport height. */
+  --feed-frame-max-width: 26.875rem;
 }
 
 html,
@@ -22,6 +24,25 @@ body,
   height: -webkit-fill-available;
   min-height: 100dvh;
   min-height: -webkit-fill-available;
+}
+
+.feed-frame-root {
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+@media (min-width: 768px) {
+  .feed-frame-root {
+    display: flex;
+    justify-content: center;
+    background: #121212;
+  }
+
+  .app-shell {
+    width: min(100%, var(--feed-frame-max-width), calc(100dvh * 9 / 16));
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.14);
+  }
 }
 
 .bottom-nav {
