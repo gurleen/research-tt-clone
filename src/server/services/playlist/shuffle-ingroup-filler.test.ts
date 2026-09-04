@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import type { VideoRow } from "../../db/tables.ts";
 import {
+  ensureTrailingFiller,
   hasLeadingFillerBaseline,
+  hasTrailingFiller,
   hasValidIngroupSpacing,
   minFillerCountForIngroupSpacing,
   shuffleIngroupIntoFiller,
@@ -57,6 +59,24 @@ describe("shuffleIngroupIntoFiller", () => {
       expect(slots).toHaveLength(ingroup.length + filler.length);
       expect(hasValidIngroupSpacing(slots)).toBe(true);
       expect(hasLeadingFillerBaseline(slots)).toBe(true);
+      expect(hasTrailingFiller(slots)).toBe(true);
+    }
+  });
+
+  test("ends on a stimulus video when filler count is exactly the spacing minimum", () => {
+    const ingroup = [
+      mockVideo("ingroup_1", "ingroup"),
+      mockVideo("ingroup_2", "ingroup"),
+      mockVideo("ingroup_3", "ingroup"),
+    ];
+    const filler = Array.from({ length: 7 }, (_, index) =>
+      mockVideo(`filler_${index}`, "filler"),
+    );
+
+    for (let run = 0; run < 20; run++) {
+      const slots = shuffleIngroupIntoFiller(ingroup, filler);
+      expect(slots.at(-1)?.video_type).toBe("ingroup");
+      expect(hasTrailingFiller(slots)).toBe(false);
     }
   });
 
@@ -85,6 +105,7 @@ describe("shuffleIngroupIntoFiller", () => {
     expect(slots).toHaveLength(6);
     expect(slots.filter((slot) => slot.video_type === "ingroup")).toHaveLength(1);
     expect(hasLeadingFillerBaseline(slots)).toBe(true);
+    expect(hasTrailingFiller(slots)).toBe(true);
     expect(slots.slice(0, 3).every((slot) => slot.video_type === "filler")).toBe(
       true,
     );
@@ -115,6 +136,69 @@ describe("shuffleIngroupIntoFiller", () => {
       );
       expect(hasValidIngroupSpacing(slots)).toBe(true);
       expect(hasLeadingFillerBaseline(slots)).toBe(true);
+      expect(hasTrailingFiller(slots)).toBe(true);
     }
+  });
+});
+
+describe("ensureTrailingFiller", () => {
+  test("appends an unused filler when the playlist ends on a stimulus video", () => {
+    const slots = shuffleIngroupIntoFiller(
+      [
+        mockVideo("ingroup_1", "ingroup"),
+        mockVideo("ingroup_2", "ingroup"),
+        mockVideo("ingroup_3", "ingroup"),
+      ],
+      Array.from({ length: 7 }, (_, index) =>
+        mockVideo(`filler_${index}`, "filler"),
+      ),
+    );
+
+    expect(hasTrailingFiller(slots)).toBe(false);
+
+    const withTrailing = ensureTrailingFiller(
+      slots,
+      mockVideo("filler_extra", "filler"),
+    );
+
+    expect(withTrailing).toHaveLength(slots.length + 1);
+    expect(hasTrailingFiller(withTrailing)).toBe(true);
+    expect(withTrailing.at(-1)?.video_id).toBe("filler_extra");
+    expect(hasValidIngroupSpacing(withTrailing)).toBe(true);
+    expect(hasLeadingFillerBaseline(withTrailing)).toBe(true);
+  });
+
+  test("does not add a filler when the playlist already ends on one", () => {
+    const slots = shuffleIngroupIntoFiller(
+      [mockVideo("ingroup_1", "ingroup")],
+      Array.from({ length: 5 }, (_, index) =>
+        mockVideo(`filler_${index}`, "filler"),
+      ),
+    );
+
+    expect(hasTrailingFiller(slots)).toBe(true);
+
+    const unchanged = ensureTrailingFiller(
+      slots,
+      mockVideo("filler_extra", "filler"),
+    );
+    expect(unchanged).toEqual(slots);
+  });
+
+  test("throws when a trailing filler is required but none remains", () => {
+    const slots = shuffleIngroupIntoFiller(
+      [
+        mockVideo("ingroup_1", "ingroup"),
+        mockVideo("ingroup_2", "ingroup"),
+      ],
+      Array.from({ length: 5 }, (_, index) =>
+        mockVideo(`filler_${index}`, "filler"),
+      ),
+    );
+
+    expect(hasTrailingFiller(slots)).toBe(false);
+    expect(() => ensureTrailingFiller(slots, undefined)).toThrow(
+      /no unused filler remains/,
+    );
   });
 });

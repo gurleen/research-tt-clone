@@ -8,6 +8,7 @@ import type { PlaylistSlot } from "./place-prompts.ts";
 export const MIN_FILLERS_BETWEEN_INGROUP = 2;
 export const MAX_FILLERS_BETWEEN_INGROUP = 2;
 export const LEADING_FILLER_COUNT = 3;
+export const TRAILING_FILLER_COUNT = 1;
 
 export function minFillerCountForIngroupSpacing(ingroupCount: number): number {
   if (ingroupCount <= 0) {
@@ -78,10 +79,36 @@ export function hasLeadingFillerBaseline(slots: PlaylistSlot[]): boolean {
   return firstStimulus >= LEADING_FILLER_COUNT;
 }
 
+/** True when the playlist is empty or the last slot is a filler. */
+export function hasTrailingFiller(slots: PlaylistSlot[]): boolean {
+  const last = slots.at(-1);
+  return last == null || last.video_type === "filler";
+}
+
+/**
+ * If the last slot is not a filler, append `extraFiller`.
+ * Used after shuffle so sessions always end on a filler video.
+ */
+export function ensureTrailingFiller(
+  slots: PlaylistSlot[],
+  extraFiller: VideoRow | undefined,
+): PlaylistSlot[] {
+  if (hasTrailingFiller(slots)) {
+    return slots;
+  }
+  if (!extraFiller) {
+    throw new Error(
+      "Playlist must end on a filler video, but no unused filler remains",
+    );
+  }
+  return [...slots, toFillerSlot(extraFiller)];
+}
+
 /**
  * Interleave ingroup videos into filler with 3 fillers before the first
  * stimulus and 2 filler videos between each consecutive ingroup slot.
- * Extra filler goes to the start and/or end.
+ * Extra filler goes to the start and/or end; when any spare remains, at
+ * least one filler is kept at the end.
  */
 export function shuffleIngroupIntoFiller(
   ingroup: VideoRow[],
@@ -122,7 +149,8 @@ export function shuffleIngroupIntoFiller(
     spare--;
   }
 
-  const extraStart = spare > 0 ? randomIntInclusive(0, spare) : 0;
+  const extraStart =
+    spare > 0 ? randomIntInclusive(0, spare - TRAILING_FILLER_COUNT) : 0;
   const startPadding = LEADING_FILLER_COUNT + extraStart;
   const endPadding = spare - extraStart;
 

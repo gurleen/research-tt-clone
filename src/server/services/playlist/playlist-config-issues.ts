@@ -6,6 +6,7 @@ import {
 import {
   LEADING_FILLER_COUNT,
   MIN_FILLERS_BETWEEN_INGROUP,
+  TRAILING_FILLER_COUNT,
   minFillerCountForIngroupSpacing,
 } from "./shuffle-ingroup-filler.ts";
 
@@ -114,9 +115,9 @@ export function playlistConfigIssues(
     return issues;
   }
 
-  const layoutFloor = minFillerCountForIngroupSpacing(
-    settings.ingroup_count_max,
-  );
+  const layoutFloor =
+    minFillerCountForIngroupSpacing(settings.ingroup_count_max) +
+    (settings.ingroup_count_max > 0 ? TRAILING_FILLER_COUNT : 0);
 
   if (
     catalog.filler < settings.filler_count_min &&
@@ -129,7 +130,7 @@ export function playlistConfigIssues(
   } else if (catalog.filler < layoutFloor) {
     issues.push({
       kind: "catalog_filler",
-      message: `Only ${catalog.filler} active filler ${pluralVideos(catalog.filler)} uploaded; need at least ${layoutFloor} for ${LEADING_FILLER_COUNT} leading fillers plus ${MIN_FILLERS_BETWEEN_INGROUP} between each ingroup.`,
+      message: `Only ${catalog.filler} active filler ${pluralVideos(catalog.filler)} uploaded; need at least ${layoutFloor} for ${LEADING_FILLER_COUNT} leading fillers, ${MIN_FILLERS_BETWEEN_INGROUP} between each ingroup, and ${TRAILING_FILLER_COUNT} trailing filler.`,
     });
   } else if (catalog.filler < settings.filler_count_max) {
     issues.push({
