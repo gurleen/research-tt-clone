@@ -26,18 +26,36 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select.tsx";
+import { cn } from "../../lib/utils.ts";
 
 const COMMUNITIES: Community[] = ["armenian", "sikh", "iranian"];
+
+function buildFeedPath(
+  session: SessionResponse,
+  stagingMode: boolean,
+  sourceType: SourceType,
+): string {
+  const params = new URLSearchParams({
+    session_id: session.session_id,
+    community: session.community,
+  });
+  if (stagingMode) {
+    params.set("source_type", sourceType);
+  }
+  return `/?${params.toString()}`;
+}
 
 export function TestSessionPage() {
   const [community, setCommunity] = useState<Community>("sikh");
   const [sourceType, setSourceType] = useState<SourceType>("micro_influencer");
+  const [demoMode, setDemoMode] = useState(false);
   const [stagingMode, setStagingMode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdSession, setCreatedSession] = useState<SessionResponse | null>(
     null,
   );
+  const [feedPath, setFeedPath] = useState<string | null>(null);
 
   useEffect(() => {
     getAdminConfig()
@@ -49,6 +67,7 @@ export function TestSessionPage() {
     event.preventDefault();
     setError(null);
     setCreatedSession(null);
+    setFeedPath(null);
     setSubmitting(true);
 
     const client = createPlatformClient();
@@ -56,18 +75,14 @@ export function TestSessionPage() {
     try {
       const session = await client.createSession({
         community,
+        demo_mode: demoMode,
         ...(stagingMode ? { source_type: sourceType } : {}),
       });
       setCreatedSession(session);
 
-      const params = new URLSearchParams({
-        session_id: session.session_id,
-        community: session.community,
-      });
-      if (stagingMode) {
-        params.set("source_type", sourceType);
-      }
-      window.open(`/?${params.toString()}`, "_blank", "noopener,noreferrer");
+      const path = buildFeedPath(session, stagingMode, sourceType);
+      setFeedPath(path);
+      window.open(path, "_blank", "noopener,noreferrer");
     } catch (err) {
       setError(
         err instanceof ApiError
@@ -146,6 +161,34 @@ export function TestSessionPage() {
               </div>
             )}
 
+            <div className="flex items-start justify-between gap-4 rounded-md border border-zinc-200 bg-zinc-50 p-3">
+              <div className="space-y-1">
+                <Label htmlFor="test-demo-mode">Demo mode</Label>
+                <p className="text-sm font-normal text-zinc-600">
+                  Keep this session link reusable after the playlist finishes,
+                  so you can present the app more than once.
+                </p>
+              </div>
+              <button
+                id="test-demo-mode"
+                type="button"
+                role="switch"
+                aria-checked={demoMode}
+                onClick={() => setDemoMode((value) => !value)}
+                className={cn(
+                  "relative mt-0.5 inline-flex h-6 w-11 shrink-0 rounded-full border border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400",
+                  demoMode ? "bg-zinc-900" : "bg-zinc-300",
+                )}
+              >
+                <span
+                  className={cn(
+                    "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-transform",
+                    demoMode ? "translate-x-5" : "translate-x-0.5",
+                  )}
+                />
+              </button>
+            </div>
+
             <Button type="submit" disabled={submitting}>
               {submitting ? "Creating…" : "Create and open feed"}
             </Button>
@@ -158,8 +201,22 @@ export function TestSessionPage() {
                 <code className="rounded bg-zinc-100 px-1">
                   {createdSession.session_id}
                 </code>{" "}
-                created with {createdSession.playlist.length} videos.
+                created with {createdSession.playlist.length} videos
+                {createdSession.demo_mode ? " in demo mode" : ""}.
               </p>
+              {feedPath && (
+                <p className="break-all text-zinc-700">
+                  Feed link:{" "}
+                  <a
+                    href={feedPath}
+                    className="font-medium text-zinc-900 underline"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {feedPath}
+                  </a>
+                </p>
+              )}
               <Link
                 to={`/admin/sessions/${createdSession.session_id}`}
                 className="font-medium text-zinc-900 underline"

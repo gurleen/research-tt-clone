@@ -226,6 +226,7 @@ export const adminSessionListItemSchema = z.object({
   status: z.string(),
   current_position: z.number().int().nonnegative(),
   assigned_at: z.string(),
+  demo_mode: z.boolean().default(false),
 });
 
 export const adminSessionListQuerySchema = z.object({

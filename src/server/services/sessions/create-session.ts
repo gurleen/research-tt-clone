@@ -4,6 +4,10 @@ import type { SessionRow } from "../../db/tables.ts";
 import type { Community, SourceType } from "../../db/tables.ts";
 import { assignSourceType } from "../randomization/assign-source-type.ts";
 import { composePlaylistSlots } from "../playlist/compose-playlist.ts";
+import {
+  isSessionLinkReusable,
+  shouldReplayDemoSession,
+} from "./session-reuse.ts";
 
 const LINK_USED_MESSAGE = "This link has already been used.";
 
@@ -48,10 +52,39 @@ export async function loadSessionByExternalId(
 }
 
 function assertReusable(session: SessionRow): SessionRow {
-  if (session.status === "in_progress") {
+  if (isSessionLinkReusable(session)) {
     return session;
   }
   throw new ApiError(409, LINK_USED_MESSAGE);
+}
+
+export async function resetDemoSessionProgress(
+  sessionId: string,
+): Promise<SessionRow> {
+  const { data, error } = await db
+    .from("sessions")
+    .update({ status: "in_progress", current_position: 0 })
+    .eq("session_id", sessionId)
+    .eq("demo_mode", true)
+    .select("*")
+    .single();
+
+  if (error || !data) {
+    throw new Error(
+      `Failed to reset demo session: ${error?.message ?? "unknown"}`,
+    );
+  }
+
+  return data;
+}
+
+export async function prepareSessionForClient(
+  session: SessionRow,
+): Promise<SessionRow> {
+  if (!shouldReplayDemoSession(session)) {
+    return session;
+  }
+  return resetDemoSessionProgress(session.session_id);
 }
 
 function isUniqueViolation(error: { code?: string; message: string }): boolean {
@@ -62,6 +95,7 @@ export async function createSessionRecord(
   community: Community,
   sourceType: SourceType,
   externalId?: string,
+  demoMode = false,
 ): Promise<SessionRow> {
   const { data, error } = await db
     .from("sessions")
@@ -70,6 +104,7 @@ export async function createSessionRecord(
       source_type: sourceType,
       status: "in_progress",
       current_position: 0,
+      demo_mode: demoMode,
       ...(externalId ? { external_id: externalId } : {}),
     })
     .select("*")
@@ -122,11 +157,16 @@ export async function createSession(
   community: Community,
   sourceTypeOverride?: SourceType,
   externalId?: string,
+  demoMode = false,
 ): Promise<CreateSessionResult> {
   if (externalId) {
     const existing = await loadSessionByExternalId(externalId);
     if (existing) {
-      return { session: assertReusable(existing), created: false };
+      const reusable = assertReusable(existing);
+      return {
+        session: await prepareSessionForClient(reusable),
+        created: false,
+      };
     }
   }
 
@@ -138,6 +178,7 @@ export async function createSession(
       community,
       sourceType,
       externalId,
+      demoMode,
     );
     await insertSessionVideos(
       slots.map((slot, position) => ({
@@ -157,7 +198,11 @@ export async function createSession(
     ) {
       const existing = await loadSessionByExternalId(externalId);
       if (existing) {
-        return { session: assertReusable(existing), created: false };
+        const reusable = assertReusable(existing);
+        return {
+          session: await prepareSessionForClient(reusable),
+          created: false,
+        };
       }
     }
     throw error;

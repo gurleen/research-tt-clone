@@ -170,6 +170,24 @@ describe("shared API schemas", () => {
     ).toBe(false);
   });
 
+  test("createSessionBodySchema accepts demo_mode", () => {
+    const parsed = createSessionBodySchema.parse({
+      community: "sikh",
+      demo_mode: true,
+    });
+    expect(parsed.demo_mode).toBe(true);
+  });
+
+  test("createSessionBodySchema rejects demo_mode with a Qualtrics token", () => {
+    expect(
+      createSessionBodySchema.safeParse({
+        community: "sikh",
+        demo_mode: true,
+        external_id: "R_abc123XYZ",
+      }).success,
+    ).toBe(false);
+  });
+
   test("parseCatalogComments accepts valid comments and drops invalid payloads", () => {
     expect(
       parseCatalogComments([
@@ -189,6 +207,7 @@ describe("shared API schemas", () => {
       playlist: [],
     });
     expect(parsed.interest_prompt_reveal_fraction).toBe(0.3);
+    expect(parsed.demo_mode).toBe(false);
   });
 
   test("sessionResponseSchema accepts a configured reveal fraction", () => {

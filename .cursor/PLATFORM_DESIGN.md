@@ -125,7 +125,8 @@ create table sessions (
   status           text        not null default 'in_progress'
     check (status in ('in_progress','playlist_complete','survey_complete','debriefed')),
   created_at       timestamptz not null default now(),
-  external_id      text unique  -- Qualtrics ResponseID join token; nullable for staging test sessions
+  external_id      text unique, -- Qualtrics ResponseID join token; nullable for staging test sessions
+  demo_mode        boolean not null default false  -- reusable presentation link; skip one-complete-use
   -- deliberately NO ip / geo / cint_id columns
 );
 
@@ -363,7 +364,8 @@ are idempotent on `event_id`.
 - If `external_id` already exists and `status = in_progress`, restore that
   session (same condition and playlist, no re-roll). If status is
   `playlist_complete` / `survey_complete` / `debriefed`, return 409
-  ("this link has already been used").
+  ("this link has already been used"). Demo sessions (`demo_mode=true`) skip
+  this one-complete-use rule so the same feed link can be presented again.
 - Server (new token): generate UUID → balanced randomization of `source_type`
   (block or stratified, per-community counters) → insert `sessions` → read
   `experiment_config` for the community → compose playlist (pick stimulus and

@@ -23,6 +23,7 @@ export type SessionSummary = {
     status: string;
     current_position: number;
     assigned_at: string;
+    demo_mode: boolean;
   };
   playlist_length: number;
   playlist: AdminSessionPlaylistItem[];
@@ -102,6 +103,7 @@ export async function buildSessionSummary(
       status: session.status,
       current_position: session.current_position,
       assigned_at: session.assigned_at,
+      demo_mode: session.demo_mode,
     },
     playlist_length: playlist.length,
     playlist,

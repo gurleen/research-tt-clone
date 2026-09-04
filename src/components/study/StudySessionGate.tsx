@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from "react";
 import { useStudySession } from "../../study/session-context.tsx";
 
 export function StudySessionGate({ children }: { children: ReactNode }) {
-  const { state, error, handoffUrl } = useStudySession();
+  const { state, error, handoffUrl, session } = useStudySession();
 
   useEffect(() => {
     if (state === "complete" && handoffUrl) {
@@ -30,6 +30,7 @@ export function StudySessionGate({ children }: { children: ReactNode }) {
   }
 
   if (state === "complete") {
+    const demoComplete = session?.demo_mode === true;
     return (
       <div className="flex h-full items-center justify-center bg-black p-6 text-center text-white">
         <div className="max-w-sm space-y-2">
@@ -39,7 +40,9 @@ export function StudySessionGate({ children }: { children: ReactNode }) {
           <p className="text-sm text-white/70">
             {handoffUrl
               ? "Please wait while we send you to the next step."
-              : "You have finished the playlist. Thank you for participating."}
+              : demoComplete
+                ? "Demo mode keeps this link reusable. Refresh the page to play the playlist again."
+                : "You have finished the playlist. Thank you for participating."}
           </p>
         </div>
       </div>

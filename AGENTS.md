@@ -41,7 +41,7 @@ bun run configure:r2-cors
 Dev URL is printed by Bun (default `http://localhost:3000`).
 
 Participant entry: `/?community=sikh&external_id=R_…`  
-Admin: `/admin` (Supabase Auth; user `app_metadata.role` must be `"admin"`). Sign-in at `/admin/login`; forgot password at `/admin/forgot-password`; recovery and signed-in change at `/admin/update-password`. Add those update-password URLs (localhost + production origin) under Authentication → URL Configuration → Redirect URLs.
+Admin: `/admin` (Supabase Auth; user `app_metadata.role` must be `"admin"`). Sign-in at `/admin/login`; forgot password at `/admin/forgot-password`; recovery and signed-in change at `/admin/update-password`. Add those update-password URLs (localhost + production origin) under Authentication → URL Configuration → Redirect URLs. `/admin/test-session` can enable **demo mode** so the opened feed link stays reusable after the playlist finishes (for presenting).
 
 ## Architecture
 
@@ -155,7 +155,7 @@ All `/api/*` requests run through IP-header stripping first (`src/server/middlew
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/sessions` | Create or restore session. Optional `external_id` (Qualtrics `R_…` token). **Required unless `STAGING_MODE=true`**. Unique token restores `in_progress`; `409` if already used. Optional `source_type` **only if `STAGING_MODE=true`** |
+| `POST` | `/api/sessions` | Create or restore session. Optional `external_id` (Qualtrics `R_…` token). **Required unless `STAGING_MODE=true` or `demo_mode=true`**. Unique token restores `in_progress`; `409` if already used. Optional `source_type` **only if `STAGING_MODE=true`**. Optional `demo_mode` keeps the link reusable after playlist complete (cannot be combined with `external_id`). |
 | `GET` | `/api/sessions/:id` | Restore same condition, playlist, `current_position` |
 | `PATCH` | `/api/sessions/:id/position` | Advance resume index (monotonic) |
 | `GET` | `/api/sessions/:id/videos/:videoId/stub` | Stub attribution + community body |

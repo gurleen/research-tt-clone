@@ -4,11 +4,15 @@ import {
   buildSurveyUrl,
   loadPlatformSettings,
 } from "../platform-settings/load-settings.ts";
-import { loadSession } from "../sessions/create-session.ts";
+import {
+  loadSession,
+  resetDemoSessionProgress,
+} from "../sessions/create-session.ts";
 import { enrichVideoEvent } from "./enrich-from-session.ts";
 import {
   idempotentInsert,
   updateSessionStatus,
+  type IdempotentInsertResult,
 } from "./idempotent-insert.ts";
 
 export async function writeContentLinkDisplay(
@@ -181,22 +185,27 @@ export async function writeCommentsOpen(
 
 export async function writePlaylistComplete(
   body: Extract<EventBody, { event: "playlist_complete" }>,
-  origin: string,
-): Promise<HandoffResponse & { duplicate: boolean }> {
+  _origin: string,
+): Promise<(HandoffResponse & { duplicate: boolean }) | IdempotentInsertResult> {
+  const session = await loadSession(body.session_id);
   const { duplicate } = await idempotentInsert("evt_playlist_complete", {
     event_id: body.event_id,
     session_id: body.session_id,
     timestamp: body.timestamp,
   });
 
+  if (session.demo_mode) {
+    if (!duplicate) {
+      await resetDemoSessionProgress(session.session_id);
+    }
+    return { duplicate };
+  }
+
   if (!duplicate) {
     await updateSessionStatus(body.session_id, "playlist_complete");
   }
 
-  const [settings, session] = await Promise.all([
-    loadPlatformSettings(),
-    loadSession(body.session_id),
-  ]);
+  const settings = await loadPlatformSettings();
 
   return {
     duplicate,

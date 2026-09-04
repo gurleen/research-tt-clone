@@ -127,7 +127,12 @@ export function SessionStatsPage() {
               </div>
               <div>
                 <p className="text-xs text-zinc-500">Status</p>
-                <Badge variant="secondary">{summary.session.status}</Badge>
+                <div className="flex flex-wrap items-center gap-1">
+                  <Badge variant="secondary">{summary.session.status}</Badge>
+                  {summary.session.demo_mode ? (
+                    <Badge variant="outline">demo</Badge>
+                  ) : null}
+                </div>
               </div>
               <div>
                 <p className="text-xs text-zinc-500">Progress</p>

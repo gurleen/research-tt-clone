@@ -96,7 +96,11 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
     async function applySession(next: SessionResponse) {
       sessionStorage.setItem(STORAGE_KEY, next.session_id);
       setSession(next);
-      setState(next.status === "playlist_complete" ? "complete" : "ready");
+      setState(
+        next.status === "playlist_complete" && !next.demo_mode
+          ? "complete"
+          : "ready",
+      );
     }
 
     async function bootstrap() {

@@ -51,7 +51,12 @@ export function SessionsTable({ sessions }: SessionsTableProps) {
               <TableCell>{formatCommunity(session.community)}</TableCell>
               <TableCell>{formatSourceType(session.source_type)}</TableCell>
               <TableCell>
-                <Badge variant="secondary">{session.status}</Badge>
+                <div className="flex flex-wrap items-center gap-1">
+                  <Badge variant="secondary">{session.status}</Badge>
+                  {session.demo_mode ? (
+                    <Badge variant="outline">demo</Badge>
+                  ) : null}
+                </div>
               </TableCell>
               <TableCell>{session.current_position}</TableCell>
               <TableCell>

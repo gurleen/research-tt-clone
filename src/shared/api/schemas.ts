@@ -66,6 +66,7 @@ export const sessionResponseSchema = z.object({
     "survey_complete",
     "debriefed",
   ]),
+  demo_mode: z.boolean().default(false),
   playlist: z.array(playlistItemSchema),
   interest_prompt_reveal_fraction: z
     .number()
@@ -79,11 +80,22 @@ export const externalIdSchema = z
   .regex(/^R_[A-Za-z0-9]+$/, "external_id must be a Qualtrics ResponseID (R_ + alphanumerics)")
   .max(64);
 
-export const createSessionBodySchema = z.object({
-  community: communitySchema,
-  source_type: sourceTypeSchema.optional(),
-  external_id: externalIdSchema.optional(),
-});
+export const createSessionBodySchema = z
+  .object({
+    community: communitySchema,
+    source_type: sourceTypeSchema.optional(),
+    external_id: externalIdSchema.optional(),
+    demo_mode: z.boolean().optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.demo_mode && value.external_id) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Demo mode cannot be used with a study link token.",
+        path: ["demo_mode"],
+      });
+    }
+  });
 
 export const patchPositionBodySchema = z.object({
   position: z.number().int().nonnegative(),
